@@ -1,0 +1,70 @@
+{
+  "generated_at": "2026-07-18T14:32:43.089342+00:00",
+  "panel": "US PM2.5 (T2 sample)",
+  "check": "staleness",
+  "threshold_hours": 24,
+  "national": {
+    "sensors_scored": 8,
+    "stale": 2,
+    "stale_rate_pct": 25.0
+  },
+  "sensors": [
+    {
+      "sensor_id": 268,
+      "location": "Houston Deer Park C3",
+      "provider": "AirNow",
+      "datetime_last": "2026-07-18T14:00:00+00:00",
+      "stale": false
+    },
+    {
+      "sensor_id": 2071327,
+      "location": "Houston North Loop C",
+      "provider": "AirNow",
+      "datetime_last": "2026-07-17T15:00:00+00:00",
+      "stale": false
+    },
+    {
+      "sensor_id": 2071333,
+      "location": "Houston Westhollow C",
+      "provider": "AirNow",
+      "datetime_last": "2026-07-17T15:00:00+00:00",
+      "stale": false
+    },
+    {
+      "sensor_id": 2031,
+      "location": "Houston Aldine C8",
+      "provider": "AirNow",
+      "datetime_last": "2026-07-17T15:00:00+00:00",
+      "stale": false
+    },
+    {
+      "sensor_id": 2071339,
+      "location": "Houston Bayland Park",
+      "provider": "AirNow",
+      "datetime_last": "2026-07-17T15:00:00+00:00",
+      "stale": false
+    },
+    {
+      "sensor_id": 5077638,
+      "location": "Seabrook Friendship",
+      "provider": "AirNow",
+      "datetime_last": "2026-07-17T15:00:00+00:00",
+      "stale": false
+    },
+    {
+      "sensor_id": 453,
+      "location": "Houston Park Place C",
+      "provider": "AirNow",
+      "datetime_last": "2016-03-28T07:00:00+00:00",
+      "stale": true
+    },
+    {
+      "sensor_id": 350,
+      "location": "MMFRA1001",
+      "provider": "AirNow",
+      "datetime_last": "2016-03-16T22:00:00+00:00",
+      "stale": true
+    }
+  ],
+  "attribution": "Air-quality data via OpenAQ and its upstream providers (CC BY 4.0 unless a provider specifies otherwise)."
+}

@@ -1,0 +1,2 @@
+# Loader runtime deps. Stdlib + requests only (deterministic, no LLM) — see docs/adr/0003.
+requests>=2.31
