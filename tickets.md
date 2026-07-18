@@ -20,12 +20,12 @@ Work the **frontier**: any ticket whose blockers are all done. This is a linear 
 
 **What to build:** The thinnest complete path: score a small US PM2.5 sample on **staleness only**, publish derived JSON, and show the result on a local `preview.html`. Proves loader → score → JSON → page.
 
-**Blocked by:** T1.
+**Blocked by:** T1. **DONE 2026-07-18** — commit `8a604f6`; `src/` + `preview.html` + `data/derived/staleness.json` (sample: 2/8 stale). 19 tests pass offline.
 
-- [ ] A **pure** staleness function returns pass/fail from `datetimeLast` + `now`; unit tests cover the 24h boundary (e.g. 23h passes, 25h fails).
-- [ ] The loader writes derived JSON (national stale-rate + per-Sensor stale flag) for the sample, reading OpenAQ live but **committing no raw data**.
-- [ ] `preview.html` fetches the derived JSON and shows *"X% of these sensors are stale"* plus the sensor list.
-- [ ] Tests run offline against the T1 fixture (no live calls).
+- [x] A **pure** staleness function returns pass/fail from `datetimeLast` + `now`; unit tests cover the 24h boundary (e.g. 23h passes, 25h fails). — `src/staleness.py::is_stale` (strictly-greater 24h).
+- [x] The loader writes derived JSON (national stale-rate + per-Sensor stale flag) for the sample, reading OpenAQ live but **committing no raw data**. — `src/loader.py`; emits `datetime_last` metadata + flags only, no measurement values.
+- [x] `preview.html` fetches the derived JSON and shows *"X% of these sensors are stale"* plus the sensor list.
+- [x] Tests run offline against the T1 fixture (no live calls). — fixture/paged fake clients in `tests/`.
 
 ## T3 — Full Trust Score
 
