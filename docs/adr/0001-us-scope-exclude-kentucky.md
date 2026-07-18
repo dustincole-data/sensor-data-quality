@@ -1,0 +1,3 @@
+# US-only scope (v1), excluding Kentucky/Louisville
+
+v1's Panel is US Sensors only (OpenAQ is global) — a legible US-audience story that keeps the daily poll inside OpenAQ's 2,000 req/hr limit; going global is a reversible v2 (lift the country filter). Kentucky/Louisville Sensors are excluded because the owner works at LG&E/KU (a Louisville utility): scoring local Sensors near employer facilities as "low-trust" could read as compliance commentary from a utility insider (conflict of interest). Both reference-grade and low-cost Sensors are in scope, since low-cost Sensors carry the messy fleet-health story the project is about.

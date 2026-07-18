@@ -1,0 +1,302 @@
+{
+  "meta": {
+    "name": "openaq-api",
+    "website": "/",
+    "page": 1,
+    "limit": 3,
+    "found": ">3"
+  },
+  "results": [
+    {
+      "id": 162,
+      "name": "Houston Deer Park C3",
+      "locality": "Houston-Sugar Land-Baytown",
+      "timezone": "America/Chicago",
+      "country": {
+        "id": 155,
+        "code": "US",
+        "name": "United States"
+      },
+      "owner": {
+        "id": 4,
+        "name": "Unknown Governmental Organization"
+      },
+      "provider": {
+        "id": 119,
+        "name": "AirNow"
+      },
+      "isMobile": false,
+      "isMonitor": true,
+      "instruments": [
+        {
+          "id": 2,
+          "name": "Government Monitor"
+        }
+      ],
+      "sensors": [
+        {
+          "id": 273,
+          "name": "co ppm",
+          "parameter": {
+            "id": 8,
+            "name": "co",
+            "units": "ppm",
+            "displayName": "CO"
+          }
+        },
+        {
+          "id": 334,
+          "name": "no2 ppm",
+          "parameter": {
+            "id": 7,
+            "name": "no2",
+            "units": "ppm",
+            "displayName": "NO\u2082"
+          }
+        },
+        {
+          "id": 332,
+          "name": "o3 ppm",
+          "parameter": {
+            "id": 10,
+            "name": "o3",
+            "units": "ppm",
+            "displayName": "O\u2083"
+          }
+        },
+        {
+          "id": 271,
+          "name": "pm10 \u00b5g/m\u00b3",
+          "parameter": {
+            "id": 1,
+            "name": "pm10",
+            "units": "\u00b5g/m\u00b3",
+            "displayName": "PM10"
+          }
+        },
+        {
+          "id": 268,
+          "name": "pm25 \u00b5g/m\u00b3",
+          "parameter": {
+            "id": 2,
+            "name": "pm25",
+            "units": "\u00b5g/m\u00b3",
+            "displayName": "PM2.5"
+          }
+        },
+        {
+          "id": 308,
+          "name": "so2 ppm",
+          "parameter": {
+            "id": 9,
+            "name": "so2",
+            "units": "ppm",
+            "displayName": "SO\u2082"
+          }
+        }
+      ],
+      "coordinates": {
+        "latitude": 29.670025,
+        "longitude": -95.128508
+      },
+      "licenses": [
+        {
+          "id": 33,
+          "name": "US Public Domain",
+          "attribution": {
+            "name": "Unknown Governmental Organization",
+            "url": null
+          },
+          "dateFrom": "2016-01-30",
+          "dateTo": null
+        }
+      ],
+      "bounds": [
+        -95.128508,
+        29.670025,
+        -95.128508,
+        29.670025
+      ],
+      "distance": null,
+      "datetimeFirst": {
+        "utc": "2016-01-30T02:00:00Z",
+        "local": "2016-01-29T20:00:00-06:00"
+      },
+      "datetimeLast": {
+        "utc": "2026-07-18T11:00:00Z",
+        "local": "2026-07-18T06:00:00-05:00"
+      }
+    },
+    {
+      "id": 164,
+      "name": "Houston North Loop C",
+      "locality": "Houston-Sugar Land-Baytown",
+      "timezone": "America/Chicago",
+      "country": {
+        "id": 155,
+        "code": "US",
+        "name": "United States"
+      },
+      "owner": {
+        "id": 4,
+        "name": "Unknown Governmental Organization"
+      },
+      "provider": {
+        "id": 119,
+        "name": "AirNow"
+      },
+      "isMobile": false,
+      "isMonitor": true,
+      "instruments": [
+        {
+          "id": 2,
+          "name": "Government Monitor"
+        }
+      ],
+      "sensors": [
+        {
+          "id": 270,
+          "name": "co ppm",
+          "parameter": {
+            "id": 8,
+            "name": "co",
+            "units": "ppm",
+            "displayName": "CO"
+          }
+        },
+        {
+          "id": 288,
+          "name": "no2 ppm",
+          "parameter": {
+            "id": 7,
+            "name": "no2",
+            "units": "ppm",
+            "displayName": "NO\u2082"
+          }
+        },
+        {
+          "id": 2071327,
+          "name": "pm25 \u00b5g/m\u00b3",
+          "parameter": {
+            "id": 2,
+            "name": "pm25",
+            "units": "\u00b5g/m\u00b3",
+            "displayName": "PM2.5"
+          }
+        }
+      ],
+      "coordinates": {
+        "latitude": 29.81453,
+        "longitude": -95.38769
+      },
+      "licenses": [
+        {
+          "id": 33,
+          "name": "US Public Domain",
+          "attribution": {
+            "name": "Unknown Governmental Organization",
+            "url": null
+          },
+          "dateFrom": "2016-01-30",
+          "dateTo": null
+        }
+      ],
+      "bounds": [
+        -95.38769,
+        29.81453,
+        -95.38769,
+        29.81453
+      ],
+      "distance": null,
+      "datetimeFirst": {
+        "utc": "2016-01-30T02:00:00Z",
+        "local": "2016-01-29T20:00:00-06:00"
+      },
+      "datetimeLast": {
+        "utc": "2026-07-17T13:00:00Z",
+        "local": "2026-07-17T08:00:00-05:00"
+      }
+    },
+    {
+      "id": 173,
+      "name": "Houston Westhollow C",
+      "locality": "Houston-Sugar Land-Baytown",
+      "timezone": "America/Chicago",
+      "country": {
+        "id": 155,
+        "code": "US",
+        "name": "United States"
+      },
+      "owner": {
+        "id": 4,
+        "name": "Unknown Governmental Organization"
+      },
+      "provider": {
+        "id": 119,
+        "name": "AirNow"
+      },
+      "isMobile": false,
+      "isMonitor": true,
+      "instruments": [
+        {
+          "id": 2,
+          "name": "Government Monitor"
+        }
+      ],
+      "sensors": [
+        {
+          "id": 287,
+          "name": "o3 ppm",
+          "parameter": {
+            "id": 10,
+            "name": "o3",
+            "units": "ppm",
+            "displayName": "O\u2083"
+          }
+        },
+        {
+          "id": 2071333,
+          "name": "pm25 \u00b5g/m\u00b3",
+          "parameter": {
+            "id": 2,
+            "name": "pm25",
+            "units": "\u00b5g/m\u00b3",
+            "displayName": "PM2.5"
+          }
+        }
+      ],
+      "coordinates": {
+        "latitude": 29.7233,
+        "longitude": -95.6358
+      },
+      "licenses": [
+        {
+          "id": 33,
+          "name": "US Public Domain",
+          "attribution": {
+            "name": "Unknown Governmental Organization",
+            "url": null
+          },
+          "dateFrom": "2016-01-30",
+          "dateTo": null
+        }
+      ],
+      "bounds": [
+        -95.6358,
+        29.7233,
+        -95.6358,
+        29.7233
+      ],
+      "distance": null,
+      "datetimeFirst": {
+        "utc": "2016-01-30T02:00:00Z",
+        "local": "2016-01-29T20:00:00-06:00"
+      },
+      "datetimeLast": {
+        "utc": "2026-07-18T11:00:00Z",
+        "local": "2026-07-18T06:00:00-05:00"
+      }
+    }
+  ],
+  "_fixture": "T1 sanitized fixture \u2014 trimmed sample of a real OpenAQ v3 response for offline tests. Public data; no API key. See tests/fixtures/README.md. Source: GET /v3/locations?countries_id=155&parameters_id=2&limit=3"
+}

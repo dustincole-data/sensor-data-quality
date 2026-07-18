@@ -1,0 +1,3 @@
+# Exclude providers that forbid redistribution; dual attribution
+
+Some OpenAQ providers assign a license with `redistributionAllowed:false` or bespoke terms. The loader reads `/v3/licenses` per Location and **fully excludes** Sensors from such providers from the Panel (rather than displaying them), disclosing the excluded count for transparency. All displayed data carries **dual attribution** — the upstream provider AND OpenAQ (CC BY 4.0 unless the provider specifies otherwise). Full exclusion is the safe default; a "publish only derived metrics" argument would also pass terms, but exclusion removes ambiguity.

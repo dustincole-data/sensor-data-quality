@@ -1,0 +1,25 @@
+# secrets — the OpenAQ API key never enters the repo
+.env
+.env.*
+!.env.example
+*.key
+
+# raw source pulls — NEVER commit source data; only derived QA metrics are published
+data/raw/
+*.raw.json
+.cache/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# node (if the page tooling lands here)
+node_modules/
+
+# os / editor
+.DS_Store
+Thumbs.db

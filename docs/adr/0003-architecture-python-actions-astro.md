@@ -1,0 +1,3 @@
+# Architecture: Python loader on GitHub Actions → in-repo derived JSON → static Astro page
+
+The loader is a Python script (stdlib + `requests`, deterministic — no LLM) run by a **daily GitHub Actions cron** in this **public** repo (free unlimited Actions minutes). It writes small derived QA JSON to `data/derived/` **in this repo**; raw pulls stay in gitignored `data/raw/` and are never committed. The public page is a **static Astro route on the existing dustincole_data site** (Vercel Hobby) that fetches the derived JSON via its raw GitHub URL. No database, no server, no runtime LLM → **$0 infra, $0 runtime LLM**. Mirrors the brain-stats pattern, but self-contained in one project repo.

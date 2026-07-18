@@ -1,0 +1,3 @@
+# Hero is a US map, rendered from a bundled basemap with no external tile service
+
+The page hero is a US map shaded/dotted by Sensor Trust Score, with the national failure-rate as an overlay. It is rendered from a **bundled US basemap** (e.g. a US-states TopoJSON shipped with the page) via d3-geo/SVG or canvas — **no external tile provider** (Leaflet/MapLibre tiles, Mapbox, etc.). Rationale: the dustincole_data site is static with a strict CSP and must stay self-contained at $0, so external tile requests/keys are out. Sensors with `coordinates:null` are **excluded from the map but still counted** in the national failure-rate and leaderboard, with the unmappable count disclosed.
