@@ -105,7 +105,7 @@ class FakeClient:
             (FIXTURES / "sensor_days_window.sample.json").read_text(encoding="utf-8"))
         self.requested_days: list[tuple] = []
 
-    def iter_location_pages(self, sample_size):
+    def iter_location_pages(self):
         yield self._page
 
     def get_sensor_days(self, sensor_id, date_from, date_to):
@@ -130,18 +130,30 @@ def test_collect_and_build_queries_a_30_day_window_by_date_not_datetime():
     assert (date_from, date_to) == ("2026-06-18", "2026-07-18")
 
 
+def test_collect_and_build_includes_exclusion_counts():
+    derived = collect_and_build(FakeClient(), NOW, sample_size=3)
+    assert "exclusions" in derived
+    assert "by_redistribution_policy" in derived["exclusions"]
+    assert "by_location_ky_louisville" in derived["exclusions"]
+    # Fixture has no exclusions (Texas locations, public licenses).
+    assert derived["exclusions"]["by_redistribution_policy"] == 0
+    assert derived["exclusions"]["by_location_ky_louisville"] == 0
+
+
 class PagedClient:
     """Two single-sensor location pages then exhaustion, to cover collect_and_build's
-    multi-page accumulation + `page += 1` continuation (offline)."""
+    multi-page accumulation + pagination continuation (offline)."""
 
     def __init__(self):
         self._days = json.loads(
             (FIXTURES / "sensor_days_window.sample.json").read_text(encoding="utf-8"))
 
-    def iter_location_pages(self, sample_size):
-        yield {"results": [{"name": "L1", "provider": {"name": "P"},
+    def iter_location_pages(self):
+        yield {"results": [{"name": "L1", "provider": {"name": "P"}, "licenses": [],
+                            "coordinates": {"latitude": 29.76, "longitude": -95.37},
                             "sensors": [{"id": 11, "parameter": {"id": 2}}]}]}
-        yield {"results": [{"name": "L2", "provider": {"name": "P"},
+        yield {"results": [{"name": "L2", "provider": {"name": "P"}, "licenses": [],
+                            "coordinates": {"latitude": 29.76, "longitude": -95.37},
                             "sensors": [{"id": 22, "parameter": {"id": 2}}]}]}
         yield {"results": []}  # exhausted
 
@@ -153,3 +165,55 @@ def test_collect_and_build_accumulates_across_pages_until_sample_size():
     derived = collect_and_build(PagedClient(), NOW, sample_size=2)
     # One PM2.5 sensor per page -> must advance to page 2 to fill the sample of 2.
     assert [s["sensor_id"] for s in derived["sensors"]] == [11, 22]
+
+
+# --- T4: exclusions (licenses + location) applied during collection -----------
+
+class ExcludingClient:
+    """Mock client with locations that trigger different exclusion rules."""
+
+    def __init__(self):
+        self._days = json.loads(
+            (FIXTURES / "sensor_days_window.sample.json").read_text(encoding="utf-8"))
+
+    def iter_location_pages(self):
+        yield {
+            "results": [
+                # Texas location with public license -> included
+                {"name": "TX Site", "provider": {"name": "P1"}, "licenses": [
+                    {"name": "Public", "redistributionAllowed": True}
+                ], "coordinates": {"latitude": 29.76, "longitude": -95.37},
+                 "sensors": [{"id": 101, "parameter": {"id": 2}}]},
+                # Kentucky location -> excluded
+                {"name": "KY Site", "provider": {"name": "P2"}, "licenses": [
+                    {"name": "Public", "redistributionAllowed": True}
+                ], "coordinates": {"latitude": 38.05, "longitude": -84.27},
+                 "sensors": [{"id": 102, "parameter": {"id": 2}}]},
+                # Site with restricted license -> excluded
+                {"name": "Restricted Site", "provider": {"name": "P3"}, "licenses": [
+                    {"name": "Restricted", "redistributionAllowed": False}
+                ], "coordinates": {"latitude": 35.76, "longitude": -90.37},
+                 "sensors": [{"id": 103, "parameter": {"id": 2}}]},
+            ]
+        }
+
+    def get_sensor_days(self, sensor_id, date_from, date_to):
+        return self._days
+
+
+def test_exclusions_are_applied_and_counted():
+    derived = collect_and_build(ExcludingClient(), NOW)
+    # Only the Texas sensor should be scored.
+    assert [s["sensor_id"] for s in derived["sensors"]] == [101]
+    # One Kentucky exclusion, one by redistribution policy.
+    assert derived["exclusions"]["by_location_ky_louisville"] == 1
+    assert derived["exclusions"]["by_redistribution_policy"] == 1
+
+
+def test_sensor_carries_provider_attribution():
+    derived = collect_and_build(FakeClient(), NOW, sample_size=1)
+    sensor = derived["sensors"][0]
+    # The fixture location has attribution in its license.
+    assert "provider_attribution" in sensor
+    # Should be the organization name from the fixture.
+    assert sensor["provider_attribution"] == "Unknown Governmental Organization"

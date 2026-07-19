@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-18T14:32:00+00:00",
-  "panel": "US PM2.5 \u2014 T3 illustrative sample (live full panel lands in T4)",
+  "generated_at": "2026-07-19T02:08:11.384104+00:00",
+  "panel": "US PM2.5 (live sample of 100)",
   "checks": [
     "staleness",
     "completeness",
@@ -17,85 +17,102 @@
     "staleness": 0.4,
     "plausibility": 0.2
   },
+  "exclusions": {
+    "by_redistribution_policy": 0,
+    "by_location_ky_louisville": 1
+  },
   "national": {
-    "sensors_scored": 7,
-    "sensors_failed": 5,
-    "failure_rate_pct": 71.4
+    "sensors_scored": 100,
+    "sensors_failed": 68,
+    "failure_rate_pct": 68.0
   },
   "sensors": [
     {
-      "sensor_id": 101,
-      "location": "Riverside Ave",
+      "sensor_id": 268,
+      "location": "Houston Deer Park C3",
       "provider": "AirNow",
-      "datetime_last": "2026-07-18T12:32:00+00:00",
-      "percent_complete": 99.8,
-      "trust_score": 96.6,
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T22:00:00+00:00",
+      "percent_complete": 98.9,
+      "trust_score": 92.7,
       "failed_checks": [],
       "failed_any": false
     },
     {
-      "sensor_id": 102,
-      "location": "Downtown Roof",
+      "sensor_id": 2071327,
+      "location": "Houston North Loop C",
       "provider": "AirNow",
-      "datetime_last": "2026-07-18T06:32:00+00:00",
-      "percent_complete": 97.0,
-      "trust_score": 85.5,
-      "failed_checks": [],
-      "failed_any": false
-    },
-    {
-      "sensor_id": 103,
-      "location": "Old Mill Rd",
-      "provider": "PurpleAir",
-      "datetime_last": "2026-07-15T10:32:00+00:00",
-      "percent_complete": 95.0,
-      "trust_score": 58.0,
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 98.4,
+      "trust_score": 39.4,
       "failed_checks": [
-        "staleness"
-      ],
-      "failed_any": true
-    },
-    {
-      "sensor_id": 104,
-      "location": "Harbor Point",
-      "provider": "PurpleAir",
-      "datetime_last": "2026-07-18T09:32:00+00:00",
-      "percent_complete": 72.0,
-      "trust_score": 80.5,
-      "failed_checks": [
-        "completeness"
-      ],
-      "failed_any": true
-    },
-    {
-      "sensor_id": 105,
-      "location": "Airport Perimeter",
-      "provider": "Clarity",
-      "datetime_last": "2026-07-18T11:32:00+00:00",
-      "percent_complete": 98.0,
-      "trust_score": 74.2,
-      "failed_checks": [
+        "staleness",
         "plausibility"
       ],
       "failed_any": true
     },
     {
-      "sensor_id": 106,
-      "location": "County Landfill Gate",
-      "provider": "Clarity",
-      "datetime_last": "2026-07-16T12:32:00+00:00",
-      "percent_complete": 61.0,
-      "trust_score": 44.4,
+      "sensor_id": 2071333,
+      "location": "Houston Westhollow C",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 96.7,
+      "trust_score": 38.7,
       "failed_checks": [
         "staleness",
-        "completeness"
+        "plausibility"
       ],
       "failed_any": true
     },
     {
-      "sensor_id": 107,
-      "location": "Decommissioned Site",
-      "provider": "PurpleAir",
+      "sensor_id": 2031,
+      "location": "Houston Aldine C8",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 98.9,
+      "trust_score": 39.6,
+      "failed_checks": [
+        "staleness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 2071339,
+      "location": "Houston Bayland Park",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 98.7,
+      "trust_score": 39.5,
+      "failed_checks": [
+        "staleness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 5077638,
+      "location": "Seabrook Friendship",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 99.1,
+      "trust_score": 39.6,
+      "failed_checks": [
+        "staleness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 453,
+      "location": "Houston Park Place C",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
       "datetime_last": null,
       "percent_complete": 0.0,
       "trust_score": 20.0,
@@ -104,7 +121,1200 @@
         "completeness"
       ],
       "failed_any": true
+    },
+    {
+      "sensor_id": 350,
+      "location": "MMFRA1001",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 352,
+      "location": "Tooele",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 354,
+      "location": "Felton Cal-Fire",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 3995,
+      "location": "ROLAND",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 93.1,
+      "trust_score": 72.0,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 356,
+      "location": "Twin Falls PM25",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.5,
+      "trust_score": 74.2,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 357,
+      "location": "MMFRA1001",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 359,
+      "location": "South Bend-Shields D",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.0,
+      "trust_score": 94.4,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 360,
+      "location": "Lafayette-Greenbush",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 95.1,
+      "trust_score": 72.8,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 361,
+      "location": "Ogden Dunes",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.5,
+      "trust_score": 94.2,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 362,
+      "location": "Columbus - Rocky For",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 59.6,
+      "trust_score": 43.8,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 363,
+      "location": "Larwill",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.2,
+      "trust_score": 94.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 5077753,
+      "location": "Indpls-Washington Pa",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.2,
+      "trust_score": 94.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 365,
+      "location": "Terre Haute-Lafayett",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 59.1,
+      "trust_score": 23.6,
+      "failed_checks": [
+        "staleness",
+        "completeness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 366,
+      "location": "Gary-IITRI",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.9,
+      "trust_score": 74.3,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 367,
+      "location": "Fort Wayne-Beacon St",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 369,
+      "location": "Elkhart-Prairie St.",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 95.1,
+      "trust_score": 92.8,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 371,
+      "location": "Kokomo - E. Vaile Av",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 55.4,
+      "trust_score": 22.2,
+      "failed_checks": [
+        "staleness",
+        "completeness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 372,
+      "location": "Fishers",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 56.3,
+      "trust_score": 22.5,
+      "failed_checks": [
+        "staleness",
+        "completeness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 377,
+      "location": "Spokane Valley-E Bro",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.6,
+      "trust_score": 74.2,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 379,
+      "location": "Enterprise - US Fore",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.2,
+      "trust_score": 94.1,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 401,
+      "location": "San Ysidro",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 1061,
+      "location": "Alamo Lake",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.5,
+      "trust_score": 94.2,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 5077675,
+      "location": "Waterbury",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.3,
+      "trust_score": 94.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 4091,
+      "location": "Potawatomi",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.9,
+      "trust_score": 94.3,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 409,
+      "location": "ELDOSPGS",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 410,
+      "location": "Liberty",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.1,
+      "trust_score": 74.0,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 413,
+      "location": "Hillcrest HS",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 420,
+      "location": "ARNOLD",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 437,
+      "location": "Troost",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.5,
+      "trust_score": 74.2,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 438,
+      "location": "St. Joseph",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 94.7,
+      "trust_score": 72.7,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 458,
+      "location": "Reading Airport",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-19T00:00:00+00:00",
+      "percent_complete": 97.4,
+      "trust_score": 95.4,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 25272,
+      "location": "Morro Bay",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 464,
+      "location": "Thirty Third",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 469,
+      "location": "Pinedale Gaseous",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.1,
+      "trust_score": 74.0,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 3724,
+      "location": "Hawthorne",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.3,
+      "trust_score": 94.1,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 479,
+      "location": "LOCKELAND",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.2,
+      "trust_score": 94.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 2187,
+      "location": "Garden",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 97.6,
+      "trust_score": 73.8,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 3346,
+      "location": "Smithfield",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.9,
+      "trust_score": 94.3,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 14017,
+      "location": "RT",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 527,
+      "location": "Indpls - I-70 E",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.6,
+      "trust_score": 94.2,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 532,
+      "location": "Las Vegas Paiute",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 534,
+      "location": "Texarkana New Boston",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 98.9,
+      "trust_score": 39.6,
+      "failed_checks": [
+        "staleness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 537,
+      "location": "Cortina Rancheria",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 2071342,
+      "location": "Temple Georgia C1045",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 99.3,
+      "trust_score": 39.7,
+      "failed_checks": [
+        "staleness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 553,
+      "location": "Jackson NCORE",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.0,
+      "trust_score": 94.4,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 3721,
+      "location": "North Provo",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 2654,
+      "location": "Lindon",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 97.4,
+      "trust_score": 93.7,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 575,
+      "location": "Miami Fire Station #",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 97.8,
+      "trust_score": 59.1,
+      "failed_checks": [
+        "staleness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 576,
+      "location": "Homestead Fire Stati",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 582,
+      "location": "Waco C1037",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 95.8,
+      "trust_score": 93.1,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 586,
+      "location": "St. Marks Wildlife R",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 97.9,
+      "trust_score": 73.9,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 588,
+      "location": "Lancaster",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-19T00:00:00+00:00",
+      "percent_complete": 97.3,
+      "trust_score": 95.4,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 3050,
+      "location": "Sunrise Acres",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.6,
+      "trust_score": 94.2,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 11710972,
+      "location": "Minneapolis - Pacifi",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.2,
+      "trust_score": 94.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 15786989,
+      "location": "Minneapolis - Lowry",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.2,
+      "trust_score": 94.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 611,
+      "location": "Albemarle HS",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 97.5,
+      "trust_score": 93.8,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 617,
+      "location": "Tonawanda II",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 25702,
+      "location": "Chicopee",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.3,
+      "trust_score": 94.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 622,
+      "location": "Hamshire C64",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T01:00:00+00:00",
+      "percent_complete": 89.9,
+      "trust_score": 36.0,
+      "failed_checks": [
+        "staleness",
+        "completeness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 624,
+      "location": "Shuttlesworth",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 651,
+      "location": "Red Bluff - Walnut o",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 662,
+      "location": "Mt Hall",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.6,
+      "trust_score": 74.2,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 689,
+      "location": "Rockland Cty",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.3,
+      "trust_score": 74.1,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 670,
+      "location": "Malta",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 94.3,
+      "trust_score": 72.5,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 673,
+      "location": "CCNY",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.8,
+      "trust_score": 94.3,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 672,
+      "location": "Newburgh",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.3,
+      "trust_score": 74.1,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 878,
+      "location": "Sidney Oil Field",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 682,
+      "location": "Near Road",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 688,
+      "location": "Boston - North End",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 25918,
+      "location": "Thompson Falls",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.9,
+      "trust_score": 74.3,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 719,
+      "location": "West Phoenix",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.1,
+      "trust_score": 74.0,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 5077770,
+      "location": "Rifle Particulate",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-06-22T16:00:00+00:00",
+      "percent_complete": 85.4,
+      "trust_score": 34.2,
+      "failed_checks": [
+        "staleness",
+        "completeness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 727,
+      "location": "Corpus Christi - Nat",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 2933,
+      "location": "CHI_COM",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.9,
+      "trust_score": 94.3,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 1540,
+      "location": "Burdens Creek",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.0,
+      "trust_score": 94.4,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 742,
+      "location": "Corvallis - Circle B",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 754,
+      "location": "Birney",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 765,
+      "location": "North Phoenix",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 97.9,
+      "trust_score": 73.9,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 768,
+      "location": "Diablo",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 783,
+      "location": "Boston - Roxbury",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 95.8,
+      "trust_score": 93.1,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 776,
+      "location": "Haverhill",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 786,
+      "location": "Boston - Von Hillern",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.3,
+      "trust_score": 94.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 790,
+      "location": "Bozeman EBAM",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 88.1,
+      "trust_score": 70.0,
+      "failed_checks": [
+        "completeness",
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 11808940,
+      "location": "Uxbridge",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 94.9,
+      "trust_score": 92.7,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 5077670,
+      "location": "Helena",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 95.8,
+      "trust_score": 73.1,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 797,
+      "location": "Providence",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 805,
+      "location": "Broadus EBAM",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 808,
+      "location": "Brockton",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 99.2,
+      "trust_score": 94.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 811,
+      "location": "Hamilton",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.5,
+      "trust_score": 74.2,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 814,
+      "location": "Portsmouth",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 95.3,
+      "trust_score": 92.9,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 830,
+      "location": "LYNN",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 836,
+      "location": "Butte",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 98.2,
+      "trust_score": 74.1,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 838,
+      "location": "Columbia Falls",
+      "provider": "AirNow",
+      "provider_attribution": "Unknown Governmental Organization",
+      "datetime_last": "2026-07-18T23:00:00+00:00",
+      "percent_complete": 97.8,
+      "trust_score": 73.9,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
     }
   ],
-  "attribution": "Air-quality data via OpenAQ and its upstream providers (CC BY 4.0 unless a provider specifies otherwise)."
+  "attribution": "OpenAQ (CC BY 4.0)",
+  "run_duration_seconds": 200.6,
+  "http_calls": 101
 }

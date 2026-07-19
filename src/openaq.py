@@ -11,6 +11,7 @@ countries_id=155, PM2.5 parameters_id=2."""
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterator, Optional
@@ -18,6 +19,43 @@ from typing import Any, Iterator, Optional
 PM25_PARAMETER_ID = 2
 US_COUNTRY_ID = 155
 BASE_URL = "https://api.openaq.org/v3"
+
+# Kentucky bounding box (ADR-0001: exclude Kentucky/Louisville — COI with LG&E/KU).
+# Whole-state extent: lat 36.49–39.15, lon -89.57 (west, the Kentucky Bend) to -81.96
+# (east). This rectangle covers all of KY — including Louisville at -85.76 — plus a
+# safe-direction sliver of neighboring states; over-exclusion is the correct bias for
+# a conflict-of-interest guard.
+KY_LAT_MIN, KY_LAT_MAX = 36.49, 39.15
+KY_LON_MIN, KY_LON_MAX = -89.57, -81.96
+
+
+def _is_in_kentucky(latitude: float, longitude: float) -> bool:
+    """True if the location is in Kentucky's bounding box (covers Louisville too)."""
+    return KY_LAT_MIN <= latitude <= KY_LAT_MAX and KY_LON_MIN <= longitude <= KY_LON_MAX
+
+
+def should_exclude_location(location: dict[str, Any]) -> bool:
+    """True if a Location should be excluded from the Panel (T4 exclusion criteria).
+
+    Exclusions (ADR-0001, ADR-0004):
+    1. Any license forbids redistribution (redistributionAllowed: false).
+    2. Location is in Kentucky (Louisville included) — conflict of interest, owner at LG&E/KU.
+    """
+    # Check licenses for redistribution restrictions.
+    licenses = location.get("licenses") or []
+    for license_obj in licenses:
+        if license_obj.get("redistributionAllowed") is False:
+            return True
+
+    # Check geographic exclusion: Kentucky (the bounding box includes Louisville).
+    coords = location.get("coordinates") or {}
+    lat = coords.get("latitude")
+    lon = coords.get("longitude")
+    if lat is not None and lon is not None:
+        if _is_in_kentucky(lat, lon):
+            return True
+
+    return False
 
 
 def extract_pm25_sensors(locations_page: dict[str, Any]) -> list[dict[str, Any]]:
@@ -140,34 +178,75 @@ class OpenAQClient:
     Only used by loader.run(); the test suite injects a fixture-backed fake instead,
     so nothing here runs offline. Rate limits (60/min, 2000/hr) matter at full-Panel
     scale (T4/T5); T2's handful of calls is well under them.
+
+    Stagger strategy (T4): pace at ~30 req/min to stay under 2000/hr and well under
+    60/min. Full Panel (~5,535 calls) completes in ~2.8h.
     """
 
-    def __init__(self, api_key: Optional[str] = None, timeout: int = 30):
+    MAX_429_RETRIES = 3
+
+    def __init__(self, api_key: Optional[str] = None, timeout: int = 30,
+                 stagger_interval: float = 2.0):
         import requests  # lazy: keeps the parse helpers importable without requests
 
         self._timeout = timeout
         self._session = requests.Session()
         self._session.headers.update({"X-API-Key": api_key or _load_api_key()})
+        self._stagger_interval = stagger_interval  # seconds between requests (~30/min)
+        self._last_request_time = 0.0
+        self._request_count = 0
+
+    def get_request_count(self) -> int:
+        """Total HTTP requests made by this client (rate-limit hygiene telemetry)."""
+        return self._request_count
 
     def _get(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
-        resp = self._session.get(f"{BASE_URL}{path}", params=params, timeout=self._timeout)
+        # Back off on 429 up to MAX_429_RETRIES times before giving up, so a brief
+        # burst of rate-limiting doesn't abort a multi-hour full-Panel run.
+        for attempt in range(self.MAX_429_RETRIES + 1):
+            # Stagger: apply a minimum interval between requests.
+            elapsed_since_last = time.time() - self._last_request_time
+            if elapsed_since_last < self._stagger_interval:
+                time.sleep(self._stagger_interval - elapsed_since_last)
+
+            self._last_request_time = time.time()
+            self._request_count += 1
+
+            resp = self._session.get(f"{BASE_URL}{path}", params=params, timeout=self._timeout)
+            if resp.status_code != 429 or attempt == self.MAX_429_RETRIES:
+                break
+            time.sleep(self._retry_after_seconds(resp))
+
         resp.raise_for_status()
         return resp.json()
 
-    def iter_location_pages(self, sample_size: int) -> Iterator[dict[str, Any]]:
-        """Yield `/v3/locations` pages of US PM2.5 Locations until the sample is covered.
+    @staticmethod
+    def _retry_after_seconds(resp: Any, default: int = 60) -> int:
+        """Seconds to wait from a 429 `Retry-After` header. Robust to a non-numeric
+        (HTTP-date) header value, which `int()` alone would choke on."""
+        raw = resp.headers.get("retry-after")
+        if raw is None:
+            return default
+        try:
+            return max(0, int(raw))
+        except (TypeError, ValueError):
+            return default
 
-        Each qualifying Location carries one PM2.5 Sensor, so a single page of
-        `limit=sample_size` normally suffices; pagination is here for safety/T4 reuse.
+    def iter_location_pages(self) -> Iterator[dict[str, Any]]:
+        """Yield `/v3/locations` pages of US PM2.5 Locations (all pages, full Panel).
+
+        Paginated iteration over all ~5,423 Locations / 5,529 PM2.5 Sensors.
+        Each page carries ~500 Locations (limit tuned per OpenAQ responsiveness).
         """
         page = 1
+        limit = 500  # per-page limit for balanced throughput
         while True:
             payload = self._get(
                 "/locations",
                 {
                     "countries_id": US_COUNTRY_ID,
                     "parameters_id": PM25_PARAMETER_ID,
-                    "limit": sample_size,
+                    "limit": limit,
                     "page": page,
                 },
             )

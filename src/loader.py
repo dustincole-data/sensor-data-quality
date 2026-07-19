@@ -1,17 +1,16 @@
-"""Loader: OpenAQ live -> Trust Score -> derived JSON. T3 ships the full score.
+"""Loader: OpenAQ live -> Trust Score -> derived JSON. T4 scales to full Panel.
 
 Split into a pure core and a thin live shell so the whole scoring path is tested
 offline (docs/adr/0002, docs/adr/0003):
-  - build_derived(records, now)      pure: records -> derived dict (national + per-Sensor)
-  - collect_and_build(client, now)   orchestration over an injectable client (fixture or live)
-  - run()                            wires the live OpenAQClient and writes the JSON file
+  - build_derived(records, now, ...)   pure: records -> derived dict (national + per-Sensor)
+  - collect_and_build(client, now, ...)   orchestration over an injectable client
+  - run()                               wires the live OpenAQClient and writes the JSON file
 
 Each Sensor is scored on three checks (staleness/completeness/plausibility) from one
 /v3/sensors/{id}/days call — windowed completeness + plausibility min/max + a
 day-resolution last-seen (docs/adr/0002). Only *derived* QA metrics are emitted —
-never a raw measurement value (CLAUDE.md hard constraint): the window min/max are
-consumed internally for the plausibility check but the published JSON carries only
-the pass/fail outcome (in `failed_checks`), not the readings themselves."""
+never a raw measurement value (CLAUDE.md hard constraint). Full Panel ~5,529 Sensors,
+excluding Kentucky/Louisville + restricted providers (ADR-0001, ADR-0004)."""
 from __future__ import annotations
 
 import json
@@ -19,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-from src.openaq import extract_pm25_sensors, summarize_days_window
+from src.openaq import extract_pm25_sensors, should_exclude_location, summarize_days_window
 from src.scoring import (
     COMPLETENESS_FLOOR_PCT,
     PLAUSIBLE_MAX,
@@ -30,8 +29,15 @@ from src.scoring import (
 )
 
 WINDOW_DAYS = 30
-PANEL_LABEL = "US PM2.5 (T3 sample)"
-ATTRIBUTION = "Air-quality data via OpenAQ and its upstream providers (CC BY 4.0 unless a provider specifies otherwise)."
+PANEL_LABEL = "US PM2.5 (live full panel)"
+OPENAQ_ATTRIBUTION = "OpenAQ (CC BY 4.0)"
+
+
+def _panel_label(sample_size: Optional[int]) -> str:
+    """Honest label: the full Panel, or a bounded live sample of N Sensors."""
+    if sample_size is None:
+        return PANEL_LABEL
+    return f"US PM2.5 (live sample of {sample_size})"
 
 # Repo-root/data/derived/trust_index.json — committed; raw pulls never are.
 DERIVED_PATH = Path(__file__).resolve().parent.parent / "data" / "derived" / "trust_index.json"
@@ -49,12 +55,17 @@ def _window_bounds(now: datetime, window_days: int = WINDOW_DAYS) -> tuple[str, 
 
 
 def build_derived(records: list[dict[str, Any]], now: datetime,
-                  weights: dict[str, float] = TRUST_WEIGHTS) -> dict[str, Any]:
+                  weights: dict[str, float] = TRUST_WEIGHTS,
+                  excluded_by_redistribution: int = 0,
+                  excluded_by_location: int = 0,
+                  panel_label: str = PANEL_LABEL) -> dict[str, Any]:
     """Score each record's Trust Score and roll up the national failure-rate.
 
     A record is `{sensor_id, location, provider, datetime_last, percent_complete,
     window_min, window_max}` (datetime_last/min/max may be None for a silent Sensor).
     Output is JSON-serializable. The hero is the share failing >=1 SLA.
+    Exclusion counts (redistribution policy + Kentucky/Louisville) are tracked for
+    transparency (ADR-0001, ADR-0004).
     """
     sensors: list[dict[str, Any]] = []
     for r in records:
@@ -71,6 +82,7 @@ def build_derived(records: list[dict[str, Any]], now: datetime,
                 "sensor_id": r["sensor_id"],
                 "location": r.get("location"),
                 "provider": r.get("provider"),
+                "provider_attribution": r.get("provider_attribution"),
                 "datetime_last": _iso(r.get("datetime_last")),
                 "percent_complete": r.get("percent_complete"),
                 "trust_score": result["trust_score"],
@@ -83,9 +95,9 @@ def build_derived(records: list[dict[str, Any]], now: datetime,
     failed = sum(1 for s in sensors if s["failed_any"])
     failure_rate = round(failed / scored * 100, 1) if scored else 0.0
 
-    return {
+    result = {
         "generated_at": now.isoformat(),
-        "panel": PANEL_LABEL,
+        "panel": panel_label,
         "checks": ["staleness", "completeness", "plausibility"],
         "thresholds": {
             "stale_hours": STALE_HOURS,
@@ -94,43 +106,115 @@ def build_derived(records: list[dict[str, Any]], now: datetime,
             "plausible_max": PLAUSIBLE_MAX,
         },
         "weights": weights,
+        "exclusions": {
+            "by_redistribution_policy": excluded_by_redistribution,
+            "by_location_ky_louisville": excluded_by_location,
+        },
         "national": {
             "sensors_scored": scored,
             "sensors_failed": failed,
             "failure_rate_pct": failure_rate,
         },
         "sensors": sensors,
-        "attribution": ATTRIBUTION,
+        "attribution": OPENAQ_ATTRIBUTION,
     }
+    return result
 
 
-def collect_and_build(client: Any, now: datetime, sample_size: int) -> dict[str, Any]:
-    """Enumerate a small PM2.5 sample, read each Sensor's /days window, and score.
+def _get_provider_attribution(location: dict[str, Any]) -> Optional[str]:
+    """Extract the upstream provider's name from licenses (for dual attribution).
 
-    `client` supplies `iter_location_pages(sample_size)` and
-    `get_sensor_days(id, date_from, date_to)`. Any object with that shape works —
-    the live OpenAQClient or a fixture-backed fake.
+    Licenses may carry `attribution.name` (the upstream provider's name). The
+    OpenAQ attribution (`attribution`) is fixed. Returns the upstream provider name or None.
+    """
+    licenses = location.get("licenses") or []
+    for lic in licenses:
+        attr = lic.get("attribution")
+        if attr and attr.get("name"):
+            return attr["name"]
+    return None
+
+
+def collect_and_build(client: Any, now: datetime,
+                      sample_size: Optional[int] = None) -> dict[str, Any]:
+    """Enumerate US PM2.5 Sensors (full Panel or a sample), apply exclusions, score.
+
+    `sample_size` limits the count (for testing); None means exhaustive iteration.
+    `client` supplies `iter_location_pages()` and `get_sensor_days(id, date_from, date_to)`.
+    Any object with that shape works — the live OpenAQClient or a fixture-backed fake.
+
+    Exclusions (ADR-0001, ADR-0004):
+    - Locations where any license forbids redistribution (redistributionAllowed: false)
+    - Kentucky/Louisville (conflict of interest with LG&E/KU owner)
+
+    Each Sensor carries dual attribution: upstream provider + OpenAQ.
     """
     date_from, date_to = _window_bounds(now)
     records: list[dict[str, Any]] = []
-    for page in client.iter_location_pages(sample_size):
-        for record in extract_pm25_sensors(page):
-            window = summarize_days_window(
-                client.get_sensor_days(record["sensor_id"], date_from, date_to)
-            )
-            record.update(window)
-            records.append(record)
-            if len(records) >= sample_size:
-                return build_derived(records, now)
-    return build_derived(records, now)
+    excluded_by_redistribution = 0
+    excluded_by_location = 0
+
+    for page in client.iter_location_pages():
+        for location in page.get("results", []):
+            # Apply T4 exclusion criteria. Counts are Sensor-level (the Panel is a set
+            # of Sensors), so count the PM2.5 Sensors in an excluded Location, not the
+            # Location itself.
+            if should_exclude_location(location):
+                excluded_sensors = len(extract_pm25_sensors({"results": [location]}))
+                licenses = location.get("licenses") or []
+                if any(lic.get("redistributionAllowed") is False for lic in licenses):
+                    excluded_by_redistribution += excluded_sensors
+                else:
+                    excluded_by_location += excluded_sensors
+                continue
+
+            # Extract PM2.5 Sensors from this Location.
+            for record in extract_pm25_sensors({"results": [location]}):
+                # Get the 30-day window for this Sensor.
+                window = summarize_days_window(
+                    client.get_sensor_days(record["sensor_id"], date_from, date_to)
+                )
+                record.update(window)
+                # Add provider attribution (dual: upstream provider + OpenAQ).
+                record["provider_attribution"] = _get_provider_attribution(location)
+                records.append(record)
+
+                # Stop if sample_size reached (for testing).
+                if sample_size is not None and len(records) >= sample_size:
+                    return build_derived(
+                        records, now,
+                        excluded_by_redistribution=excluded_by_redistribution,
+                        excluded_by_location=excluded_by_location,
+                        panel_label=_panel_label(sample_size),
+                    )
+
+    return build_derived(
+        records, now,
+        excluded_by_redistribution=excluded_by_redistribution,
+        excluded_by_location=excluded_by_location,
+        panel_label=_panel_label(sample_size),
+    )
 
 
-def run(sample_size: int = 8) -> dict[str, Any]:
-    """Live entry point: read OpenAQ, score, write the derived JSON. Commits no raw data."""
+def run(sample_size: Optional[int] = None) -> dict[str, Any]:
+    """Live entry point: read OpenAQ full Panel, score, write derived JSON.
+
+    sample_size: for testing, cap the run at this many Sensors (None = exhaustive).
+    Commits no raw data. Records the actual wall-clock run duration for rate-limit
+    hygiene monitoring (the full ~5.5k-call run must stay staggered under 2000/hr).
+    """
+    import time
     from src.openaq import OpenAQClient  # local import: tests never hit the network
 
     now = datetime.now(timezone.utc)
-    derived = collect_and_build(OpenAQClient(), now, sample_size)
+    start = time.time()
+    client = OpenAQClient()
+    derived = collect_and_build(client, now, sample_size=sample_size)
+    # Duration + call count must be measured AFTER the run completes, not at call
+    # time (they together show the run stayed staggered under 2000/hr).
+    derived["run_duration_seconds"] = round(time.time() - start, 1)
+    derived["http_calls"] = client.get_request_count()
+
     DERIVED_PATH.parent.mkdir(parents=True, exist_ok=True)
     DERIVED_PATH.write_text(json.dumps(derived, indent=2), encoding="utf-8")
     return derived
@@ -139,5 +223,10 @@ def run(sample_size: int = 8) -> dict[str, Any]:
 if __name__ == "__main__":
     result = run()
     n = result["national"]
-    print(f"Wrote {DERIVED_PATH} — {n['sensors_failed']}/{n['sensors_scored']} failed "
-          f">=1 SLA ({n['failure_rate_pct']}%)")
+    e = result.get("exclusions", {})
+    d = result.get("run_duration_seconds", "?")
+    print(f"Wrote {DERIVED_PATH}")
+    print(f"  Scored: {n['sensors_failed']}/{n['sensors_scored']} failed >=1 SLA ({n['failure_rate_pct']}%)")
+    print(f"  Excluded: {e.get('by_redistribution_policy', 0)} by policy, "
+          f"{e.get('by_location_ky_louisville', 0)} by location")
+    print(f"  {result.get('http_calls', '?')} HTTP calls in {d}s")
