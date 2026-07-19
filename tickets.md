@@ -53,12 +53,12 @@ Work the **frontier**: any ticket whose blockers are all done. This is a linear 
 
 **What to build:** Make it self-updating and durable, on the public repo.
 
-**Blocked by:** T4.
+**Blocked by:** T4. **DONE 2026-07-19** — commit `ca2c379`; public repo https://github.com/dustincole-data/sensor-data-quality (pushed as `main`). `OPENAQ_API_KEY` set as a repo secret; a sample `workflow_dispatch` smoke run went green end-to-end (secret decrypts, loader runs in CI) without pushing over production. 71 tests pass offline.
 
-- [ ] The **public GitHub repo** is created and pushed.
-- [ ] A daily GitHub Actions cron runs the loader and commits the updated derived JSON.
-- [ ] A 90-day aggregate history (failure-rate + per-provider medians) is appended each run.
-- [ ] On loader failure or empty result, the last-good JSON is retained (a simulated failure does not overwrite with a broken/empty file).
+- [x] The **public GitHub repo** is created and pushed. — `dustincole-data/sensor-data-quality`, public, default `main`; all T1–T5 commits pushed.
+- [x] A daily GitHub Actions cron runs the loader and commits the updated derived JSON. — `.github/workflows/daily.yml` (06:17 UTC cron + manual dispatch); runs the full staggered ~3h Panel with the `OPENAQ_API_KEY` secret and commits `data/derived/` only when changed. Sample smoke runs are guarded from pushing over full-Panel data.
+- [x] A 90-day aggregate history (failure-rate + per-provider medians) is appended each run. — `src/persist.py::append_history` → `data/derived/history.json`: rolling 90-day window, per-day idempotent, per-provider median Trust Score + panel provenance.
+- [x] On loader failure or empty result, the last-good JSON is retained (a simulated failure does not overwrite with a broken/empty file). — `persist_run` validity gate (`is_valid_derived`) + atomic temp+`os.replace` writes; an empty/malformed result RETAINS last-good, and a corrupt history row self-heals (never aborts a good run). Proven by offline `tests/test_persist.py`.
 
 ## T6 — Real page: map hero + leaderboard + table + trend
 
