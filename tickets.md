@@ -42,12 +42,12 @@ Work the **frontier**: any ticket whose blockers are all done. This is a linear 
 
 **What to build:** Scale from sample to the whole US PM2.5 Panel, with honest exclusions and rate-limit hygiene.
 
-**Blocked by:** T3.
+**Blocked by:** T3. **DONE 2026-07-18** — commit `904b812`; `src/openaq.py::should_exclude_location` + unbounded `iter_location_pages()`; `src/loader.py` exclusion counts + dual attribution + `run()` duration/http_calls. Live sample (100) replaces the illustrative JSON: 68% failed ≥1 SLA, 1 KY/Louisville exclusion, 101 calls in 200.6s. 59 tests pass offline. Full ~3h Panel run deferred to T5's daily cron.
 
-- [ ] The loader enumerates and scores the full US PM2.5 Panel via pagination.
-- [ ] `/v3/licenses` is read; Sensors from `redistributionAllowed:false` providers are excluded; Kentucky/Louisville Sensors are excluded; both excluded counts appear in the JSON.
-- [ ] Every displayed Sensor carries provider + OpenAQ attribution.
-- [ ] Requests back off on 429 and stagger to stay within 2,000/hr; the full run completes within limits (duration recorded).
+- [x] The loader enumerates and scores the full US PM2.5 Panel via pagination. — `iter_location_pages()` (limit=500, all pages); `collect_and_build` iterates exhaustively when `sample_size=None`.
+- [x] `/v3/licenses` is read; Sensors from `redistributionAllowed:false` providers are excluded; Kentucky/Louisville Sensors are excluded; both excluded counts appear in the JSON. — licenses ride the `/v3/locations` list (no extra calls); `exclusions.{by_redistribution_policy,by_location_ky_louisville}` are Sensor-level.
+- [x] Every displayed Sensor carries provider + OpenAQ attribution. — per-Sensor `provider` + `provider_attribution` (upstream) + top-level OpenAQ CC BY 4.0.
+- [x] Requests back off on 429 and stagger to stay within 2,000/hr; the full run completes within limits (duration recorded). — `OpenAQClient` ~30/min stagger (≤1800/hr), 429 backoff (robust `Retry-After`, bounded retries); `run_duration_seconds` + `http_calls` in the JSON.
 
 ## T5 — Daily automation + history + fallback
 
