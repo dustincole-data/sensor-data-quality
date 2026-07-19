@@ -13,12 +13,11 @@ never a raw measurement value (CLAUDE.md hard constraint). Full Panel ~5,529 Sen
 excluding Kentucky/Louisville + restricted providers (ADR-0001, ADR-0004)."""
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Any, Optional
 
 from src.openaq import extract_pm25_sensors, should_exclude_location, summarize_days_window
+from src.persist import DERIVED_PATH, is_valid_derived, persist_run
 from src.scoring import (
     COMPLETENESS_FLOOR_PCT,
     PLAUSIBLE_MAX,
@@ -38,9 +37,6 @@ def _panel_label(sample_size: Optional[int]) -> str:
     if sample_size is None:
         return PANEL_LABEL
     return f"US PM2.5 (live sample of {sample_size})"
-
-# Repo-root/data/derived/trust_index.json — committed; raw pulls never are.
-DERIVED_PATH = Path(__file__).resolve().parent.parent / "data" / "derived" / "trust_index.json"
 
 
 def _iso(dt: Optional[datetime]) -> Optional[str]:
@@ -197,11 +193,15 @@ def collect_and_build(client: Any, now: datetime,
 
 
 def run(sample_size: Optional[int] = None) -> dict[str, Any]:
-    """Live entry point: read OpenAQ full Panel, score, write derived JSON.
+    """Live entry point: read OpenAQ full Panel, score, safely publish derived JSON.
 
-    sample_size: for testing, cap the run at this many Sensors (None = exhaustive).
+    sample_size: for testing/smoke runs, cap at this many Sensors (None = exhaustive).
     Commits no raw data. Records the actual wall-clock run duration for rate-limit
     hygiene monitoring (the full ~5.5k-call run must stay staggered under 2000/hr).
+
+    Publishing is guarded by persist_run: an empty or malformed result retains the
+    last-good JSON instead of overwriting it, and a rolling 90-day history is
+    appended on every good run (T5). Returns the derived dict either way.
     """
     import time
     from src.openaq import OpenAQClient  # local import: tests never hit the network
@@ -215,17 +215,26 @@ def run(sample_size: Optional[int] = None) -> dict[str, Any]:
     derived["run_duration_seconds"] = round(time.time() - start, 1)
     derived["http_calls"] = client.get_request_count()
 
-    DERIVED_PATH.parent.mkdir(parents=True, exist_ok=True)
-    DERIVED_PATH.write_text(json.dumps(derived, indent=2), encoding="utf-8")
+    persist_run(derived, now)
     return derived
 
 
 if __name__ == "__main__":
-    result = run()
+    import os
+
+    # SAMPLE_SIZE lets the manual workflow_dispatch run a quick smoke test (N Sensors);
+    # the daily cron leaves it unset for the full Panel.
+    _raw = os.environ.get("SAMPLE_SIZE", "").strip()
+    if _raw and not _raw.isdigit():
+        raise SystemExit(f"SAMPLE_SIZE must be a positive integer or blank, got {_raw!r}")
+    result = run(sample_size=int(_raw) if _raw else None)
     n = result["national"]
     e = result.get("exclusions", {})
     d = result.get("run_duration_seconds", "?")
-    print(f"Wrote {DERIVED_PATH}")
+    if is_valid_derived(result):
+        print(f"Wrote {DERIVED_PATH}")
+    else:
+        print(f"RETAINED last-good {DERIVED_PATH} — empty/invalid result, not overwritten")
     print(f"  Scored: {n['sensors_failed']}/{n['sensors_scored']} failed >=1 SLA ({n['failure_rate_pct']}%)")
     print(f"  Excluded: {e.get('by_redistribution_policy', 0)} by policy, "
           f"{e.get('by_location_ky_louisville', 0)} by location")

@@ -1,0 +1,58 @@
+name: daily-trust-index
+
+# Daily self-update (T5): the loader reads the live OpenAQ US PM2.5 Panel, scores it,
+# and commits the derived JSON + 90-day history back to this repo. The full staggered
+# run is ~3h (<2000 req/hr); a failed/empty run retains the last-good JSON (persist_run).
+on:
+  schedule:
+    # 06:17 UTC daily. Off the top of the hour (GitHub's cron congestion) and pre-US-morning.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      sample_size:
+        description: "Cap the run at N Sensors (quick smoke test). Blank = full Panel."
+        required: false
+        default: ""
+
+permissions:
+  contents: write   # commit the refreshed data/derived/*.json back to the repo
+
+concurrency:
+  group: daily-trust-index
+  cancel-in-progress: false   # let a long full run finish rather than aborting mid-Panel
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350   # full Panel ~3h; headroom under GitHub's 6h job ceiling
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Run loader (live OpenAQ -> derived JSON + history)
+        env:
+          OPENAQ_API_KEY: ${{ secrets.OPENAQ_API_KEY }}
+          SAMPLE_SIZE: ${{ github.event.inputs.sample_size }}
+        run: python -m src.loader
+
+      - name: Commit refreshed data (skips when unchanged / retained)
+        # Never push a bounded smoke-test run over the committed full-Panel data —
+        # only scheduled runs and full manual runs (blank sample_size) commit.
+        if: ${{ github.event.inputs.sample_size == '' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/derived/trust_index.json data/derived/history.json
+          if git diff --cached --quiet; then
+            echo "No data changes — last-good retained, nothing to commit."
+          else
+            git commit -m "data: daily refresh $(date -u +%Y-%m-%d)"
+            git push
+          fi

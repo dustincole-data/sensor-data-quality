@@ -1,0 +1,15 @@
+{
+  "generated_at": "2026-07-19T02:08:11.384104+00:00",
+  "retention_days": 90,
+  "history": [
+    {
+      "date": "2026-07-19",
+      "failure_rate_pct": 68.0,
+      "sensors_scored": 100,
+      "panel": "US PM2.5 (live sample of 100)",
+      "provider_medians": {
+        "AirNow": 72.9
+      }
+    }
+  ]
+}
