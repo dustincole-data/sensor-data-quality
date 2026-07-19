@@ -1,0 +1,110 @@
+{
+  "generated_at": "2026-07-18T14:32:00+00:00",
+  "panel": "US PM2.5 \u2014 T3 illustrative sample (live full panel lands in T4)",
+  "checks": [
+    "staleness",
+    "completeness",
+    "plausibility"
+  ],
+  "thresholds": {
+    "stale_hours": 24,
+    "completeness_floor_pct": 90.0,
+    "plausible_min": 0.0,
+    "plausible_max": 1000.0
+  },
+  "weights": {
+    "completeness": 0.4,
+    "staleness": 0.4,
+    "plausibility": 0.2
+  },
+  "national": {
+    "sensors_scored": 7,
+    "sensors_failed": 5,
+    "failure_rate_pct": 71.4
+  },
+  "sensors": [
+    {
+      "sensor_id": 101,
+      "location": "Riverside Ave",
+      "provider": "AirNow",
+      "datetime_last": "2026-07-18T12:32:00+00:00",
+      "percent_complete": 99.8,
+      "trust_score": 96.6,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 102,
+      "location": "Downtown Roof",
+      "provider": "AirNow",
+      "datetime_last": "2026-07-18T06:32:00+00:00",
+      "percent_complete": 97.0,
+      "trust_score": 85.5,
+      "failed_checks": [],
+      "failed_any": false
+    },
+    {
+      "sensor_id": 103,
+      "location": "Old Mill Rd",
+      "provider": "PurpleAir",
+      "datetime_last": "2026-07-15T10:32:00+00:00",
+      "percent_complete": 95.0,
+      "trust_score": 58.0,
+      "failed_checks": [
+        "staleness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 104,
+      "location": "Harbor Point",
+      "provider": "PurpleAir",
+      "datetime_last": "2026-07-18T09:32:00+00:00",
+      "percent_complete": 72.0,
+      "trust_score": 80.5,
+      "failed_checks": [
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 105,
+      "location": "Airport Perimeter",
+      "provider": "Clarity",
+      "datetime_last": "2026-07-18T11:32:00+00:00",
+      "percent_complete": 98.0,
+      "trust_score": 74.2,
+      "failed_checks": [
+        "plausibility"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 106,
+      "location": "County Landfill Gate",
+      "provider": "Clarity",
+      "datetime_last": "2026-07-16T12:32:00+00:00",
+      "percent_complete": 61.0,
+      "trust_score": 44.4,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    },
+    {
+      "sensor_id": 107,
+      "location": "Decommissioned Site",
+      "provider": "PurpleAir",
+      "datetime_last": null,
+      "percent_complete": 0.0,
+      "trust_score": 20.0,
+      "failed_checks": [
+        "staleness",
+        "completeness"
+      ],
+      "failed_any": true
+    }
+  ],
+  "attribution": "Air-quality data via OpenAQ and its upstream providers (CC BY 4.0 unless a provider specifies otherwise)."
+}

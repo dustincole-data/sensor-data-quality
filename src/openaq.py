@@ -60,6 +60,63 @@ def parse_datetime_last(sensor_detail: dict[str, Any]) -> Optional[datetime]:
     return datetime.fromisoformat(last.replace("Z", "+00:00"))
 
 
+def _parse_utc(node: Optional[dict[str, Any]]) -> Optional[datetime]:
+    """Timezone-aware datetime from an OpenAQ `{utc, local}` node, or None."""
+    if not node:
+        return None
+    utc = node.get("utc")
+    if not utc:
+        return None
+    return datetime.fromisoformat(utc.replace("Z", "+00:00"))
+
+
+def summarize_days_window(days_response: dict[str, Any]) -> dict[str, Any]:
+    """Reduce a `/v3/sensors/{id}/days` window to the four scoring inputs.
+
+    One bounded daily-aggregate call yields BOTH windowed completeness AND
+    plausibility min/max in a single response (docs/adr/0002). Returns:
+      - `datetime_last`   day-resolution last-seen (newest record's coverage end)
+      - `percent_complete` sum(observed)/sum(expected) over the window, as a %
+      - `window_min` / `window_max`  extremes across the window's daily summaries
+
+    An empty window (Sensor silent all 30 days) => datetime_last None, 0% complete,
+    None min/max. Record order is not assumed; last-seen is the max, not the last.
+    """
+    results = days_response.get("results") or []
+    if not results:
+        return {"datetime_last": None, "percent_complete": 0.0,
+                "window_min": None, "window_max": None}
+
+    expected = observed = 0
+    mins: list[float] = []
+    maxes: list[float] = []
+    last_seen: Optional[datetime] = None
+    for record in results:
+        coverage = record.get("coverage") or {}
+        expected += coverage.get("expectedCount") or 0
+        observed += coverage.get("observedCount") or 0
+
+        summary = record.get("summary") or {}
+        if summary.get("min") is not None:
+            mins.append(summary["min"])
+        if summary.get("max") is not None:
+            maxes.append(summary["max"])
+
+        # Prefer the coverage end (actual observed span); fall back to the period end.
+        day_end = _parse_utc(coverage.get("datetimeTo")) or _parse_utc(
+            (record.get("period") or {}).get("datetimeTo"))
+        if day_end is not None and (last_seen is None or day_end > last_seen):
+            last_seen = day_end
+
+    percent_complete = round(observed / expected * 100, 1) if expected else 0.0
+    return {
+        "datetime_last": last_seen,
+        "percent_complete": percent_complete,
+        "window_min": min(mins) if mins else None,
+        "window_max": max(maxes) if maxes else None,
+    }
+
+
 def _load_api_key() -> str:
     """Key from the OS env (CI) or the gitignored .env (local). Never from the repo."""
     key = os.environ.get("OPENAQ_API_KEY")
@@ -120,5 +177,18 @@ class OpenAQClient:
             page += 1
 
     def get_sensor_detail(self, sensor_id: int) -> dict[str, Any]:
-        """`/v3/sensors/{id}` — source of the per-Sensor `datetimeLast` for staleness."""
+        """`/v3/sensors/{id}` — lifetime detail (retained; not on the T3 scoring path)."""
         return self._get(f"/sensors/{sensor_id}", {})
+
+    def get_sensor_days(self, sensor_id: int, date_from: str, date_to: str) -> dict[str, Any]:
+        """`/v3/sensors/{id}/days` — the one per-Sensor call the Trust Score reads.
+
+        Its daily summaries yield windowed completeness + plausibility min/max +
+        day-resolution last-seen. Dates are `YYYY-MM-DD`: the aggregate endpoints
+        honor `date_from`/`date_to`; `datetime_from`/`datetime_to` are silently
+        ignored (docs/adr/0002). `limit` covers the whole ~30-day window.
+        """
+        return self._get(
+            f"/sensors/{sensor_id}/days",
+            {"date_from": date_from, "date_to": date_to, "limit": 400},
+        )

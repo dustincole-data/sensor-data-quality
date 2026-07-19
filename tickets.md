@@ -31,12 +31,12 @@ Work the **frontier**: any ticket whose blockers are all done. This is a linear 
 
 **What to build:** Complete the scoring: add completeness + plausibility, produce the graded 0–100 Trust Score and the "failed ≥1 SLA" flag; surface the real hero number and a per-Sensor score table.
 
-**Blocked by:** T2.
+**Blocked by:** T2. **DONE 2026-07-18** — `src/scoring.py` (pure Trust Score) + loader/openaq wired to one `/v3/sensors/{id}/days` call per Sensor; `data/derived/trust_index.json` + `preview.html` (hero 71.4% on an illustrative sample). 47 tests pass offline.
 
-- [ ] The pure scoring function returns all three checks + graded Trust Score; unit tests cover each boundary (23h/25h; 89%/91%; −1, 1000, 1001), the score math, and "failed ≥1 SLA".
-- [ ] Derived JSON carries per-Sensor `trust_score` + `failed_checks[]` and the national failure-rate.
-- [ ] `preview.html` shows the hero failure-rate % and a per-Sensor Trust Score table.
-- [ ] Trust-Score weights live in one config value (tunable).
+- [x] The pure scoring function returns all three checks + graded Trust Score; unit tests cover each boundary (23h/25h; 89%/91%; −1, 1000, 1001), the score math, and "failed ≥1 SLA". — `src/scoring.py`; `tests/test_scoring.py`.
+- [x] Derived JSON carries per-Sensor `trust_score` + `failed_checks[]` and the national failure-rate. — `src/loader.py::build_derived`; raw window min/max stay internal (never published).
+- [x] `preview.html` shows the hero failure-rate % and a per-Sensor Trust Score table. — worst-first, color-banded scores + failed-check badges.
+- [x] Trust-Score weights live in one config value (tunable). — `src/scoring.py::TRUST_WEIGHTS` (0.40/0.40/0.20), emitted in the JSON.
 
 ## T4 — Full Panel + licensing/exclusions
 
