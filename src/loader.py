@@ -79,6 +79,9 @@ def build_derived(records: list[dict[str, Any]], now: datetime,
                 "location": r.get("location"),
                 "provider": r.get("provider"),
                 "provider_attribution": r.get("provider_attribution"),
+                # Location coordinates drive the hero map (ADR-0005). null => the
+                # Sensor is unmappable: excluded from the map, still scored + counted.
+                "coordinates": r.get("coordinates"),
                 "datetime_last": _iso(r.get("datetime_last")),
                 "percent_complete": r.get("percent_complete"),
                 "trust_score": result["trust_score"],

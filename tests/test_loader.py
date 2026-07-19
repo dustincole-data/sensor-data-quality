@@ -70,6 +70,23 @@ def test_raw_window_min_max_are_never_published():
     assert "plausibility" in sensor["failed_checks"]
 
 
+def test_per_sensor_carries_coordinates_for_the_map():
+    # T6/ADR-0005: the hero map projects each Sensor's Location coordinates, so the
+    # derived JSON must carry them (lat/lon) — display context, never a measurement.
+    coords = {"latitude": 29.76, "longitude": -95.37}
+    derived = build_derived([_rec(1, coordinates=coords)], NOW)
+    assert derived["sensors"][0]["coordinates"] == coords
+
+
+def test_missing_coordinates_emit_null_so_unmappable_sensors_are_counted_not_dropped():
+    # ADR-0005: a Sensor with no coordinates is excluded from the map but still scored
+    # and counted (the unmappable count is disclosed). Emit null — never drop the row.
+    derived = build_derived([_rec(1)], NOW)  # _rec attaches no coordinates
+    sensor = derived["sensors"][0]
+    assert sensor["coordinates"] is None
+    assert derived["national"]["sensors_scored"] == 1  # still in the aggregate
+
+
 def test_derived_has_metadata_shape_the_page_reads():
     derived = build_derived([_rec(1)], NOW)
     assert derived["checks"] == ["staleness", "completeness", "plausibility"]
@@ -165,6 +182,13 @@ def test_collect_and_build_accumulates_across_pages_until_sample_size():
     derived = collect_and_build(PagedClient(), NOW, sample_size=2)
     # One PM2.5 sensor per page -> must advance to page 2 to fill the sample of 2.
     assert [s["sensor_id"] for s in derived["sensors"]] == [11, 22]
+
+
+def test_collect_and_build_passes_location_coordinates_through_for_the_map():
+    # The map projects each Sensor's Location coordinates; they must survive the whole
+    # collect->build path (offline), not merely the pure build_derived pass.
+    derived = collect_and_build(PagedClient(), NOW, sample_size=1)
+    assert derived["sensors"][0]["coordinates"] == {"latitude": 29.76, "longitude": -95.37}
 
 
 # --- T4: exclusions (licenses + location) applied during collection -----------
