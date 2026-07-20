@@ -74,10 +74,10 @@ Work the **frontier**: any ticket whose blockers are all done. This is a linear 
 
 **What to build:** The framing that keeps it in-lane, plus the ship artifacts.
 
-**Blocked by:** T6.
+**Blocked by:** T6. **DONE 2026-07-19** — dustincole_data page shipped (methodology section + prominent disclaimer + workbench ProjectCard) alongside T6; repo ship artifacts here (README-skim, `docs/exec-memo.md`). Slug confirmed `/projects/sensor-trust` (the site's actual IA — the wiki's `/labs/` route does not exist). COI self-screen clean (neutral exclusion counts only; no employer/facility named). Pushed to go live.
 
-- [ ] A methodology section states the check definitions, thresholds, the out-of-order-ingestion caveat, and the honest denominator (excluded counts).
-- [ ] A prominent disclaimer states this is **data health, not air quality and not sensor accuracy**.
-- [ ] The H1 is the question; the slug is confirmed against the site's IA.
-- [ ] A README-skim and a 1-page exec memo (the competency this proves) are written; dual attribution is present; the COI self-screen passes (no Kentucky/facility commentary).
-- [ ] The page is live.
+- [x] A methodology section states the check definitions, thresholds, the out-of-order-ingestion caveat, and the honest denominator (excluded counts). — `sensor-trust.astro` "Methodology" section, driven by the pipeline's own `thresholds`/`weights` config so copy can't drift from the numbers.
+- [x] A prominent disclaimer states this is **data health, not air quality and not sensor accuracy**. — read-this-first callout below the hero (adds the "not sensor-accuracy/calibration" clause the hero lead lacked).
+- [x] The H1 is the question; the slug is confirmed against the site's IA. — H1 = "Can you trust the US air-sensor network's data?"; slug `/projects/sensor-trust` (every project page lives under `/projects/*`; there is no `/labs/` route).
+- [x] A README-skim and a 1-page exec memo (the competency this proves) are written; dual attribution is present; the COI self-screen passes (no Kentucky/facility commentary). — README v1 checks corrected to the shipped three + live link; `docs/exec-memo.md`; dual attribution present on page + README; COI screen grep-clean.
+- [x] The page is live. — pushed; dustincole_data redeploys on Vercel (full-panel data self-heals via the daily cron on next run).

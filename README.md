@@ -2,9 +2,11 @@
 
 A public **data-quality monitor for air-quality sensors** — the "Sensor Trust Index" on dustincoledata.com.
 
+**Live:** https://dustincoledata.com/projects/sensor-trust · re-scored daily by a GitHub Actions cron.
+
 ## What this is (and is NOT)
 
-It scores the **data-reporting health of each sensor** in the OpenAQ network: staleness, dropout, window-completeness, drift, and cross-sensor consistency. The question it answers is **"is this sensor *feed* trustworthy?"**
+It scores the **data-reporting health of each sensor** in the OpenAQ network on three v1 checks — **staleness** (silent > 24 h), **completeness** (< 90% of expected readings over a trailing 30 days), and **plausibility** (a physically impossible PM2.5 value) — rolled into a 0–100 Trust Score. The question it answers is **"is this sensor *feed* trustworthy?"** (Two richer checks — flatline detection and cross-sensor consistency — are deferred to v2.)
 
 It is **NOT**:
 - an air-quality index (it says nothing about whether the air is clean), or
