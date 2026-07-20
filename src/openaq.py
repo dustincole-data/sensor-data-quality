@@ -183,7 +183,11 @@ class OpenAQClient:
     60/min. Full Panel (~5,535 calls) completes in ~2.8h.
     """
 
-    MAX_429_RETRIES = 3
+    MAX_RETRIES = 3
+    # Transient statuses worth retrying: 429 (rate limit) plus upstream 5xx blips. A
+    # single sensor's 500 must never abort a multi-hour full-Panel run (it did on
+    # 2026-07-20: one /sensors/{id}/days 500 crashed the whole run ~1.5h in).
+    RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 
     def __init__(self, api_key: Optional[str] = None, timeout: int = 30,
                  stagger_interval: float = 2.0):
@@ -201,9 +205,10 @@ class OpenAQClient:
         return self._request_count
 
     def _get(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
-        # Back off on 429 up to MAX_429_RETRIES times before giving up, so a brief
-        # burst of rate-limiting doesn't abort a multi-hour full-Panel run.
-        for attempt in range(self.MAX_429_RETRIES + 1):
+        # Retry transient failures up to MAX_RETRIES times before giving up, so neither
+        # a burst of rate-limiting (429) nor an upstream server blip (5xx) aborts a
+        # multi-hour full-Panel run — one bad sensor must not nuke the whole run.
+        for attempt in range(self.MAX_RETRIES + 1):
             # Stagger: apply a minimum interval between requests.
             elapsed_since_last = time.time() - self._last_request_time
             if elapsed_since_last < self._stagger_interval:
@@ -213,12 +218,21 @@ class OpenAQClient:
             self._request_count += 1
 
             resp = self._session.get(f"{BASE_URL}{path}", params=params, timeout=self._timeout)
-            if resp.status_code != 429 or attempt == self.MAX_429_RETRIES:
+            if resp.status_code not in self.RETRYABLE_STATUS or attempt == self.MAX_RETRIES:
                 break
-            time.sleep(self._retry_after_seconds(resp))
+            time.sleep(self._backoff_seconds(resp, attempt))
 
         resp.raise_for_status()
         return resp.json()
+
+    @classmethod
+    def _backoff_seconds(cls, resp: Any, attempt: int) -> int:
+        """Seconds to wait before a retry. A 429 honors its Retry-After window; a
+        transient 5xx (usually headerless) gets a short capped exponential backoff, so
+        a server blip costs seconds rather than the 60s rate-limit default."""
+        if resp.status_code == 429:
+            return cls._retry_after_seconds(resp)
+        return min(2 ** attempt, 8)  # 5xx: 1s, 2s, 4s, 8s
 
     @staticmethod
     def _retry_after_seconds(resp: Any, default: int = 60) -> int:

@@ -5,6 +5,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
+
 from src.openaq import extract_pm25_sensors, parse_datetime_last, summarize_days_window
 
 FIXTURES = Path(__file__).parent / "fixtures" / "openaq"
@@ -196,5 +198,71 @@ def test_retry_after_defaults_on_http_date_form():
     from src.openaq import OpenAQClient
     resp = _FakeResp({"retry-after": "Wed, 21 Oct 2026 07:28:00 GMT"})
     assert OpenAQClient._retry_after_seconds(resp) == 60
+
+
+# --- transient-failure retries in _get: a 5xx must NOT abort the full-Panel run ---
+# 2026-07-20 regression: one /sensors/{id}/days 500 crashed a ~1.5h run and nothing
+# committed. _get now retries transient 5xx just as it already retried 429. Driven with
+# a fake session so it stays offline; time.sleep is patched so the backoff costs no wall
+# time.
+
+class _FakeGetResp:
+    def __init__(self, status_code, payload=None, headers=None):
+        self.status_code = status_code
+        self._payload = payload or {}
+        self.headers = headers or {}
+
+    def json(self):
+        return self._payload
+
+    def raise_for_status(self):
+        if self.status_code >= 400:
+            import requests
+            raise requests.exceptions.HTTPError(f"{self.status_code} Error", response=self)
+
+
+class _FakeSession:
+    def __init__(self, responses):
+        self._responses = list(responses)
+        self.calls = 0
+
+    def get(self, url, params=None, timeout=None):
+        self.calls += 1
+        return self._responses.pop(0)
+
+
+def _client_with(responses, monkeypatch):
+    from src.openaq import OpenAQClient
+    monkeypatch.setattr("src.openaq.time.sleep", lambda *_: None)  # no real backoff wait
+    client = OpenAQClient(api_key="test", stagger_interval=0)
+    client._session = _FakeSession(responses)
+    return client
+
+
+def test_get_retries_transient_500_then_succeeds(monkeypatch):
+    client = _client_with(
+        [_FakeGetResp(500), _FakeGetResp(200, {"results": [{"ok": True}]})], monkeypatch
+    )
+    assert client._get("/sensors/1/days", {}) == {"results": [{"ok": True}]}
+    assert client._session.calls == 2  # first 500 retried, second 200 returned
+
+
+def test_get_gives_up_after_persistent_5xx(monkeypatch):
+    import requests
+    client = _client_with([_FakeGetResp(503) for _ in range(4)], monkeypatch)
+    with pytest.raises(requests.exceptions.HTTPError):
+        client._get("/sensors/1/days", {})
+    assert client._session.calls == 4  # MAX_RETRIES (3) + 1 attempt, then raise
+
+
+def test_backoff_honors_retry_after_for_429_but_is_short_for_5xx():
+    from src.openaq import OpenAQClient
+    # 429 -> honor the Retry-After rate-limit window.
+    assert OpenAQClient._backoff_seconds(_FakeGetResp(429, headers={"retry-after": "30"}), 0) == 30
+    # 5xx -> short capped exponential (1, 2, 4, 8), never the 60s rate-limit default.
+    r500 = _FakeGetResp(500)
+    assert OpenAQClient._backoff_seconds(r500, 0) == 1
+    assert OpenAQClient._backoff_seconds(r500, 2) == 4
+    assert OpenAQClient._backoff_seconds(r500, 9) == 8  # capped
 
 
