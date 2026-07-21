@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-21T08:44:37.099581+00:00",
+  "generated_at": "2026-07-21T14:38:18.094720+00:00",
   "retention_days": 90,
   "history": [
     {
@@ -30,19 +30,19 @@
     },
     {
       "date": "2026-07-21",
-      "failure_rate_pct": 69.4,
-      "sensors_scored": 5474,
+      "failure_rate_pct": 73.0,
+      "sensors_scored": 5546,
       "panel": "US PM2.5 (live full panel)",
       "provider_medians": {
-        "AirGradient": 92.1,
-        "AirNow": 39.0,
-        "CMU": 20.0,
-        "Clarity": 78.9,
-        "HabitatMap": 20.0,
-        "Love My Air Denver": 74.5,
-        "N/A": 20.0,
-        "Spartan": 20.0,
-        "richmond beaco2n": 20.0
+        "AirGradient": 88.9,
+        "AirNow": 72.9,
+        "CMU": 50.0,
+        "Clarity": 66.3,
+        "HabitatMap": 50.0,
+        "Love My Air Denver": 77.2,
+        "N/A": 75.0,
+        "Spartan": 50.0,
+        "richmond beaco2n": 50.0
       }
     }
   ]
