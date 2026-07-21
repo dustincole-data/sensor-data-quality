@@ -10,7 +10,7 @@ This project scores the **data-reporting health of sensors** (staleness, dropout
 
 - **Raw data is NEVER committed.** The loader pulls OpenAQ live and publishes only small *derived* QA metrics as JSON. `data/raw/` is git-ignored.
 - **$0 infra, $0 runtime LLM.** Deterministic metrics only (no LLM in the loader). Free rails: GitHub Actions cron (public repo) + Vercel Hobby + static JSON.
-- **COI:** exclude Kentucky/Louisville sensors; stay vendor-neutral; no facility/emissions commentary. (Owner works at LG&E/KU.)
+- **COI:** stay vendor-neutral; no facility/emissions commentary. (Owner works at LG&E/KU; the Kentucky/Louisville geo exclusion was removed 2026-07-20 — no COI, Dustin's call — ADR-0001 superseded.)
 - **Attribution:** dual — the upstream provider AND OpenAQ (CC BY 4.0 unless a provider specifies otherwise); suppress providers with `redistributionAllowed:false` from sensor-level display.
 
 ## Agent skills

@@ -42,8 +42,7 @@ cheap and durable. That is observability / data-reliability engineering.
 
 ## Integrity note
 
-Panel is US PM2.5. Kentucky/Louisville sensors are held out of scope as a
-conflict-of-interest precaution, keeping the author at arm's length from any
-local network. Rationale in [`docs/adr/0001`](adr/0001-us-scope-exclude-kentucky.md).
+Panel is US PM2.5. Providers whose license forbids redistribution are excluded from
+the Panel and counted (dual-attribution + licensing hygiene, ADR-0004).
 
 **Code + open pipeline:** https://github.com/dustincole-data/sensor-data-quality

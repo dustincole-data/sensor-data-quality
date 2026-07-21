@@ -82,7 +82,6 @@
         const ex = d.exclusions || {};
         const exBits = [];
         if (ex.by_redistribution_policy) exBits.push(`${ex.by_redistribution_policy} excluded (redistribution policy)`);
-        if (ex.by_location_ky_louisville) exBits.push(`${ex.by_location_ky_louisville} excluded (KY/Louisville)`);
         document.getElementById("sub").textContent =
           `${n.sensors_failed} of ${n.sensors_scored} ${d.panel} sensors · `
           + `checks: ${d.checks.join(", ")}`

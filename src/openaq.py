@@ -20,41 +20,18 @@ PM25_PARAMETER_ID = 2
 US_COUNTRY_ID = 155
 BASE_URL = "https://api.openaq.org/v3"
 
-# Kentucky bounding box (ADR-0001: exclude Kentucky/Louisville — COI with LG&E/KU).
-# Whole-state extent: lat 36.49–39.15, lon -89.57 (west, the Kentucky Bend) to -81.96
-# (east). This rectangle covers all of KY — including Louisville at -85.76 — plus a
-# safe-direction sliver of neighboring states; over-exclusion is the correct bias for
-# a conflict-of-interest guard.
-KY_LAT_MIN, KY_LAT_MAX = 36.49, 39.15
-KY_LON_MIN, KY_LON_MAX = -89.57, -81.96
-
-
-def _is_in_kentucky(latitude: float, longitude: float) -> bool:
-    """True if the location is in Kentucky's bounding box (covers Louisville too)."""
-    return KY_LAT_MIN <= latitude <= KY_LAT_MAX and KY_LON_MIN <= longitude <= KY_LON_MAX
-
 
 def should_exclude_location(location: dict[str, Any]) -> bool:
-    """True if a Location should be excluded from the Panel (T4 exclusion criteria).
+    """True if a Location should be excluded from the Panel (ADR-0004).
 
-    Exclusions (ADR-0001, ADR-0004):
-    1. Any license forbids redistribution (redistributionAllowed: false).
-    2. Location is in Kentucky (Louisville included) — conflict of interest, owner at LG&E/KU.
+    Exclusion: any license forbids redistribution (redistributionAllowed: false).
+    The Kentucky/Louisville geographic exclusion (ADR-0001) was removed 2026-07-20 —
+    no conflict of interest, Dustin's call; see A5c.
     """
-    # Check licenses for redistribution restrictions.
     licenses = location.get("licenses") or []
     for license_obj in licenses:
         if license_obj.get("redistributionAllowed") is False:
             return True
-
-    # Check geographic exclusion: Kentucky (the bounding box includes Louisville).
-    coords = location.get("coordinates") or {}
-    lat = coords.get("latitude")
-    lon = coords.get("longitude")
-    if lat is not None and lon is not None:
-        if _is_in_kentucky(lat, lon):
-            return True
-
     return False
 
 
@@ -67,6 +44,13 @@ def extract_pm25_sensors(locations_page: dict[str, Any]) -> list[dict[str, Any]]
     records: list[dict[str, Any]] = []
     for location in locations_page.get("results", []):
         provider = (location.get("provider") or {}).get("name")
+        # The Location's minute-resolution last-seen (this page already carries it — no
+        # extra call). Used as the Sensor's freshness signal for the staleness check
+        # (A1 F5): far finer than the /days day-resolution coverage end, so a normally-
+        # reporting station reaches the top band and never false-FAILs the 24h bar near
+        # the cron hour. Location-level (its newest report across parameters); the
+        # per-Sensor /days completeness is the authoritative PM2.5-dropout signal.
+        station_last_seen = _parse_utc(location.get("datetimeLast"))
         for sensor in location.get("sensors", []):
             if (sensor.get("parameter") or {}).get("id") != PM25_PARAMETER_ID:
                 continue
@@ -78,6 +62,7 @@ def extract_pm25_sensors(locations_page: dict[str, Any]) -> list[dict[str, Any]]
                     "location": location.get("name"),
                     "provider": provider,
                     "coordinates": location.get("coordinates"),
+                    "datetime_last": station_last_seen,
                 }
             )
     return records
@@ -109,26 +94,31 @@ def _parse_utc(node: Optional[dict[str, Any]]) -> Optional[datetime]:
 
 
 def summarize_days_window(days_response: dict[str, Any]) -> dict[str, Any]:
-    """Reduce a `/v3/sensors/{id}/days` window to the four scoring inputs.
+    """Reduce a `/v3/sensors/{id}/days` window to the scoring inputs.
 
-    One bounded daily-aggregate call yields BOTH windowed completeness AND
-    plausibility min/max in a single response (docs/adr/0002). Returns:
+    One bounded daily-aggregate call yields windowed completeness, plausibility min/max,
+    AND the per-day mean series in a single response (docs/adr/0002, docs/adr/0006).
+    Returns:
       - `datetime_last`   day-resolution last-seen (newest record's coverage end)
       - `percent_complete` sum(observed)/sum(expected) over the window, as a %
       - `window_min` / `window_max`  extremes across the window's daily summaries
+      - `daily_means`     each day's mean, oldest-first (the drift Baseline + recent split)
 
     An empty window (Sensor silent all 30 days) => datetime_last None, 0% complete,
-    None min/max. Record order is not assumed; last-seen is the max, not the last.
+    None min/max, empty series. Record order is not assumed; last-seen is the max, not
+    the last, and daily_means is sorted by day, not by arrival.
     """
     results = days_response.get("results") or []
     if not results:
         return {"datetime_last": None, "percent_complete": 0.0,
-                "window_min": None, "window_max": None}
+                "window_min": None, "window_max": None, "daily_means": []}
 
     expected = observed = 0
     mins: list[float] = []
     maxes: list[float] = []
     last_seen: Optional[datetime] = None
+    # (day_end, daily mean) pairs -> the chronological series the drift check reads.
+    dated_means: list[tuple[datetime, float]] = []
     for record in results:
         coverage = record.get("coverage") or {}
         expected += coverage.get("expectedCount") or 0
@@ -145,6 +135,9 @@ def summarize_days_window(days_response: dict[str, Any]) -> dict[str, Any]:
             (record.get("period") or {}).get("datetimeTo"))
         if day_end is not None and (last_seen is None or day_end > last_seen):
             last_seen = day_end
+        # A day needs both a mean and a timestamp to place in the ordered series.
+        if summary.get("avg") is not None and day_end is not None:
+            dated_means.append((day_end, summary["avg"]))
 
     percent_complete = round(observed / expected * 100, 1) if expected else 0.0
     return {
@@ -152,6 +145,7 @@ def summarize_days_window(days_response: dict[str, Any]) -> dict[str, Any]:
         "percent_complete": percent_complete,
         "window_min": min(mins) if mins else None,
         "window_max": max(maxes) if maxes else None,
+        "daily_means": [mean for _, mean in sorted(dated_means, key=lambda dm: dm[0])],
     }
 
 

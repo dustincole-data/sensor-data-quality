@@ -33,6 +33,19 @@ def test_extract_pm25_sensors_carries_display_context():
     assert first["coordinates"] == {"latitude": 29.670025, "longitude": -95.128508}
 
 
+def test_extract_pm25_sensors_reads_location_last_seen_for_freshness():
+    # F5: the Sensor's freshness (for the staleness check) is the Location's minute-
+    # resolution datetimeLast on the /locations page — no extra call — not the coarse
+    # /days coverage end. Absent datetimeLast -> None (the loader treats None as stale).
+    page = _load("locations_us_pm25_page.sample.json")
+    first = extract_pm25_sensors(page)[0]
+    assert first["datetime_last"] == datetime(2026, 7, 18, 11, 0, 0, tzinfo=timezone.utc)
+
+    no_last = extract_pm25_sensors(
+        {"results": [{"name": "L", "sensors": [{"id": 9, "parameter": {"id": 2}}]}]})
+    assert no_last[0]["datetime_last"] is None
+
+
 def test_extract_pm25_sensors_empty_page_yields_nothing():
     assert extract_pm25_sensors({"results": []}) == []
 
@@ -89,10 +102,35 @@ def test_summarize_days_window_empty_window_is_fully_incomplete():
     # A Sensor silent across the whole window: no data to plausibility-check, 0% complete.
     window = summarize_days_window({"results": []})
     assert window == {"datetime_last": None, "percent_complete": 0.0,
-                      "window_min": None, "window_max": None}
+                      "window_min": None, "window_max": None, "daily_means": []}
 
 
-# --- T4: location exclusions (licenses + Kentucky/Louisville) ----------------
+def test_summarize_days_window_retains_chronological_daily_means():
+    # The per-day mean series feeds the drift check (docs/adr/0006). 31 daily records.
+    window = summarize_days_window(_load("sensor_days_window.sample.json"))
+    assert len(window["daily_means"]) == 31
+    # Endpoints: oldest day (2026-06-17) avg first, newest day (2026-07-17) avg last.
+    assert window["daily_means"][0] == pytest.approx(8.370833, abs=1e-4)
+    assert window["daily_means"][-1] == pytest.approx(14.683333, abs=1e-4)
+
+
+def test_summarize_days_window_daily_means_are_ordered_oldest_first():
+    # Records may arrive newest-first; the series must still be chronological so the
+    # drift baseline (older days) and recent window (newer days) split correctly.
+    older = {"period": {"datetimeTo": {"utc": "2026-07-01T05:00:00Z"}},
+             "coverage": {"expectedCount": 24, "observedCount": 24,
+                          "datetimeTo": {"utc": "2026-07-01T05:00:00Z"}},
+             "summary": {"min": 3.0, "max": 9.0, "avg": 6.0}}
+    newer = {"period": {"datetimeTo": {"utc": "2026-07-10T05:00:00Z"}},
+             "coverage": {"expectedCount": 24, "observedCount": 24,
+                          "datetimeTo": {"utc": "2026-07-10T05:00:00Z"}},
+             "summary": {"min": 1.0, "max": 12.0, "avg": 7.0}}
+    window = summarize_days_window({"results": [newer, older]})  # newest first
+    assert window["daily_means"] == [6.0, 7.0]  # older (6.0) then newer (7.0)
+
+
+# --- T4/A5c: location exclusions (licenses only; the Kentucky/Louisville geo
+# exclusion was removed 2026-07-20, no COI, ADR-0001 superseded) --------------
 
 def test_should_exclude_location_if_any_license_forbids_redistribution():
     from src.openaq import should_exclude_location
@@ -121,48 +159,33 @@ def test_should_not_exclude_location_if_licenses_allow_redistribution():
     assert should_exclude_location(location) is False
 
 
-def test_should_exclude_location_in_louisville():
+def test_should_not_exclude_kentucky_or_neighbor_state_locations():
+    # A5c: the KY/Louisville geo exclusion is gone (no COI, Dustin's call; ADR-0001
+    # superseded). Also verifies A1 F7: the removed bounding box used to mislabel
+    # neighbor-state Sensors (Cincinnati OH) as KY exclusions — that's moot now.
     from src.openaq import should_exclude_location
 
-    location = {
+    louisville = {
         "name": "Downtown Louisville Site",
         "coordinates": {"latitude": 38.25, "longitude": -85.76},
         "licenses": [{"name": "Public", "redistributionAllowed": True}]
     }
-    assert should_exclude_location(location) is True
+    assert should_exclude_location(louisville) is False
 
-
-def test_should_exclude_location_in_kentucky():
-    from src.openaq import should_exclude_location
-
-    # Eastern Kentucky (Lexington).
-    location = {
+    lexington = {
         "name": "Lexington Site",
         "coordinates": {"latitude": 38.05, "longitude": -84.27},
         "licenses": [{"name": "Public", "redistributionAllowed": True}]
     }
-    assert should_exclude_location(location) is True
+    assert should_exclude_location(lexington) is False
 
-
-def test_should_exclude_location_in_western_kentucky():
-    from src.openaq import should_exclude_location
-
-    # Western Kentucky (Paducah, lon -88.6) — must be excluded too. A too-narrow
-    # bounding box that only covered eastern KY would leak this COI exclusion.
-    paducah = {
-        "name": "Paducah Site",
-        "coordinates": {"latitude": 37.08, "longitude": -88.60},
+    # Cincinnati OH — inside the old bbox's over-inclusive top edge (A1 F7).
+    cincinnati = {
+        "name": "Cincinnati Site",
+        "coordinates": {"latitude": 39.10, "longitude": -84.51},
         "licenses": [{"name": "Public", "redistributionAllowed": True}]
     }
-    assert should_exclude_location(paducah) is True
-
-    # Bowling Green (lon -86.42) — also western/central KY.
-    bowling_green = {
-        "name": "Bowling Green Site",
-        "coordinates": {"latitude": 36.99, "longitude": -86.42},
-        "licenses": [{"name": "Public", "redistributionAllowed": True}]
-    }
-    assert should_exclude_location(bowling_green) is True
+    assert should_exclude_location(cincinnati) is False
 
 
 def test_should_not_exclude_location_in_other_states():

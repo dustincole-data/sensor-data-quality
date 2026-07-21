@@ -6,30 +6,45 @@ offline (docs/adr/0002, docs/adr/0003):
   - collect_and_build(client, now, ...)   orchestration over an injectable client
   - run()                               wires the live OpenAQClient and writes the JSON file
 
-Each Sensor is scored on three checks (staleness/completeness/plausibility) from one
-/v3/sensors/{id}/days call — windowed completeness + plausibility min/max + a
-day-resolution last-seen (docs/adr/0002). Only *derived* QA metrics are emitted —
+Each Sensor is scored on four checks (staleness/completeness/plausibility/drift) from
+one /v3/sensors/{id}/days call — windowed completeness + plausibility min/max + a
+day-resolution last-seen + the per-day mean series (docs/adr/0002, docs/adr/0006). Only
+*derived* QA metrics are emitted —
 never a raw measurement value (CLAUDE.md hard constraint). Full Panel ~5,529 Sensors,
-excluding Kentucky/Louisville + restricted providers (ADR-0001, ADR-0004)."""
+excluding restricted-license providers (ADR-0004; the Kentucky/Louisville exclusion was
+removed 2026-07-20, ADR-0001 superseded)."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from src.openaq import extract_pm25_sensors, should_exclude_location, summarize_days_window
-from src.persist import DERIVED_PATH, is_valid_derived, persist_run
+from src.persist import DERIVED_PATH, persist_run
 from src.scoring import (
+    CHECKS,
     COMPLETENESS_FLOOR_PCT,
+    DRIFT_MIN_BASELINE_DAYS,
+    DRIFT_RECENT_DAYS,
+    DRIFT_Z,
     PLAUSIBLE_MAX,
     PLAUSIBLE_MIN,
     STALE_HOURS,
     TRUST_WEIGHTS,
+    WEIGHTS_NOTE,
+    plausibility_reason,
     score_sensor,
 )
 
 WINDOW_DAYS = 30
 PANEL_LABEL = "US PM2.5 (live full panel)"
 OPENAQ_ATTRIBUTION = "OpenAQ (CC BY 4.0)"
+
+# Abort-resilience (A1 F3): a single persistently-bad Sensor (non-retryable 4xx, or a 5xx
+# past the client's retries) must never abort a ~3h full-Panel run — it is skipped and
+# counted. But a *flood* of failures is a systemic upstream outage, not one bad Sensor:
+# past this ceiling the run aborts so persist_run retains last-good rather than publishing a
+# garbage panel. ~50 is well under 1% of the ~5.5k Panel yet far above any plausible handful.
+MAX_SKIPPED_SENSORS = 50
 
 
 def _panel_label(sample_size: Optional[int]) -> str:
@@ -53,15 +68,15 @@ def _window_bounds(now: datetime, window_days: int = WINDOW_DAYS) -> tuple[str, 
 def build_derived(records: list[dict[str, Any]], now: datetime,
                   weights: dict[str, float] = TRUST_WEIGHTS,
                   excluded_by_redistribution: int = 0,
-                  excluded_by_location: int = 0,
-                  panel_label: str = PANEL_LABEL) -> dict[str, Any]:
+                  panel_label: str = PANEL_LABEL,
+                  skipped: int = 0) -> dict[str, Any]:
     """Score each record's Trust Score and roll up the national failure-rate.
 
     A record is `{sensor_id, location, provider, datetime_last, percent_complete,
-    window_min, window_max}` (datetime_last/min/max may be None for a silent Sensor).
-    Output is JSON-serializable. The hero is the share failing >=1 SLA.
-    Exclusion counts (redistribution policy + Kentucky/Louisville) are tracked for
-    transparency (ADR-0001, ADR-0004).
+    window_min, window_max, daily_means}` (datetime_last/min/max may be None and
+    daily_means empty for a silent Sensor). Output is JSON-serializable. The hero is the
+    share failing >=1 check.
+    The redistribution-policy exclusion count is tracked for transparency (ADR-0004).
     """
     sensors: list[dict[str, Any]] = []
     for r in records:
@@ -71,6 +86,7 @@ def build_derived(records: list[dict[str, Any]], now: datetime,
             window_min=r.get("window_min"),
             window_max=r.get("window_max"),
             now=now,
+            daily_means=r.get("daily_means"),
             weights=weights,
         )
         sensors.append(
@@ -87,6 +103,10 @@ def build_derived(records: list[dict[str, Any]], now: datetime,
                 "trust_score": result["trust_score"],
                 "failed_checks": result["failed_checks"],
                 "failed_any": result["failed_any"],
+                # A derived label for WHICH plausibility bound broke (A1 F9) — auditable
+                # without ever emitting the raw window min/max measurement values.
+                "plausibility_reason": plausibility_reason(
+                    r.get("window_min"), r.get("window_max")),
             }
         )
 
@@ -97,23 +117,29 @@ def build_derived(records: list[dict[str, Any]], now: datetime,
     result = {
         "generated_at": now.isoformat(),
         "panel": panel_label,
-        "checks": ["staleness", "completeness", "plausibility"],
+        "checks": list(CHECKS),
         "thresholds": {
             "stale_hours": STALE_HOURS,
             "completeness_floor_pct": COMPLETENESS_FLOOR_PCT,
             "plausible_min": PLAUSIBLE_MIN,
             "plausible_max": PLAUSIBLE_MAX,
+            "drift_z": DRIFT_Z,
+            "drift_recent_days": DRIFT_RECENT_DAYS,
+            "drift_min_baseline_days": DRIFT_MIN_BASELINE_DAYS,
         },
         "weights": weights,
+        "weights_note": WEIGHTS_NOTE,
         "exclusions": {
             "by_redistribution_policy": excluded_by_redistribution,
-            "by_location_ky_louisville": excluded_by_location,
         },
         "national": {
             "sensors_scored": scored,
             "sensors_failed": failed,
             "failure_rate_pct": failure_rate,
         },
+        # Sensors dropped this run after a per-Sensor fetch failure (A1 F3). Surfaced so a
+        # partial run is visible/auditable rather than silently thinning the Panel.
+        "skipped": skipped,
         "sensors": sensors,
         "attribution": OPENAQ_ATTRIBUTION,
     }
@@ -142,38 +168,54 @@ def collect_and_build(client: Any, now: datetime,
     `client` supplies `iter_location_pages()` and `get_sensor_days(id, date_from, date_to)`.
     Any object with that shape works — the live OpenAQClient or a fixture-backed fake.
 
-    Exclusions (ADR-0001, ADR-0004):
+    Exclusions (ADR-0004):
     - Locations where any license forbids redistribution (redistributionAllowed: false)
-    - Kentucky/Louisville (conflict of interest with LG&E/KU owner)
 
     Each Sensor carries dual attribution: upstream provider + OpenAQ.
     """
     date_from, date_to = _window_bounds(now)
     records: list[dict[str, Any]] = []
     excluded_by_redistribution = 0
-    excluded_by_location = 0
+    skipped = 0
 
     for page in client.iter_location_pages():
         for location in page.get("results", []):
-            # Apply T4 exclusion criteria. Counts are Sensor-level (the Panel is a set
-            # of Sensors), so count the PM2.5 Sensors in an excluded Location, not the
-            # Location itself.
+            # Apply the T4 exclusion criterion. Counts are Sensor-level (the Panel is a
+            # set of Sensors), so count the PM2.5 Sensors in an excluded Location, not
+            # the Location itself.
             if should_exclude_location(location):
-                excluded_sensors = len(extract_pm25_sensors({"results": [location]}))
-                licenses = location.get("licenses") or []
-                if any(lic.get("redistributionAllowed") is False for lic in licenses):
-                    excluded_by_redistribution += excluded_sensors
-                else:
-                    excluded_by_location += excluded_sensors
+                excluded_by_redistribution += len(
+                    extract_pm25_sensors({"results": [location]}))
                 continue
 
             # Extract PM2.5 Sensors from this Location.
             for record in extract_pm25_sensors({"results": [location]}):
-                # Get the 30-day window for this Sensor.
-                window = summarize_days_window(
-                    client.get_sensor_days(record["sensor_id"], date_from, date_to)
-                )
+                # Get the 30-day window for this Sensor. A single Sensor's fetch failure
+                # (non-retryable 4xx, or a 5xx past the client's retries) must never abort
+                # the whole ~3h run — skip it, count it, continue (A1 F3, 2026-07-20).
+                # Broad by design: any per-Sensor error (HTTP, JSON, parse) costs one
+                # Sensor, not the run. A flood past the ceiling is a systemic outage —
+                # abort so persist_run keeps last-good instead of publishing a thin Panel.
+                try:
+                    window = summarize_days_window(
+                        client.get_sensor_days(record["sensor_id"], date_from, date_to)
+                    )
+                except Exception as exc:
+                    skipped += 1
+                    if skipped > MAX_SKIPPED_SENSORS:
+                        raise RuntimeError(
+                            f"aborting run: {skipped} Sensors skipped after fetch failures "
+                            f"(> {MAX_SKIPPED_SENSORS} ceiling) — likely a systemic upstream "
+                            f"outage, not one bad Sensor") from exc
+                    continue
+                # extract_pm25_sensors set datetime_last from the Location's minute-
+                # resolution datetimeLast (A1 F5). Prefer it over the /days day-resolution
+                # coverage end, which update(window) carries as the fallback when a
+                # Location omits its last-seen.
+                station_last_seen = record.get("datetime_last")
                 record.update(window)
+                if station_last_seen is not None:
+                    record["datetime_last"] = station_last_seen
                 # Add provider attribution (dual: upstream provider + OpenAQ).
                 record["provider_attribution"] = _get_provider_attribution(location)
                 records.append(record)
@@ -183,15 +225,15 @@ def collect_and_build(client: Any, now: datetime,
                     return build_derived(
                         records, now,
                         excluded_by_redistribution=excluded_by_redistribution,
-                        excluded_by_location=excluded_by_location,
                         panel_label=_panel_label(sample_size),
+                        skipped=skipped,
                     )
 
     return build_derived(
         records, now,
         excluded_by_redistribution=excluded_by_redistribution,
-        excluded_by_location=excluded_by_location,
         panel_label=_panel_label(sample_size),
+        skipped=skipped,
     )
 
 
@@ -218,7 +260,11 @@ def run(sample_size: Optional[int] = None) -> dict[str, Any]:
     derived["run_duration_seconds"] = round(time.time() - start, 1)
     derived["http_calls"] = client.get_request_count()
 
-    persist_run(derived, now)
+    written = persist_run(derived, now)
+    # Publish decision for the CLI summary. Set AFTER the atomic write so it never lands
+    # in the committed JSON (in-memory only) — lets __main__ report Wrote vs RETAINED
+    # honestly now that a structurally-valid run can still be held by the F4 guard.
+    derived["published"] = written
     return derived
 
 
@@ -234,11 +280,11 @@ if __name__ == "__main__":
     n = result["national"]
     e = result.get("exclusions", {})
     d = result.get("run_duration_seconds", "?")
-    if is_valid_derived(result):
+    if result.get("published"):
         print(f"Wrote {DERIVED_PATH}")
     else:
-        print(f"RETAINED last-good {DERIVED_PATH} — empty/invalid result, not overwritten")
+        print(f"RETAINED last-good {DERIVED_PATH} — empty/invalid or implausible result, "
+              f"not overwritten (F4 guard)")
     print(f"  Scored: {n['sensors_failed']}/{n['sensors_scored']} failed >=1 SLA ({n['failure_rate_pct']}%)")
-    print(f"  Excluded: {e.get('by_redistribution_policy', 0)} by policy, "
-          f"{e.get('by_location_ky_louisville', 0)} by location")
+    print(f"  Excluded: {e.get('by_redistribution_policy', 0)} by policy")
     print(f"  {result.get('http_calls', '?')} HTTP calls in {d}s")

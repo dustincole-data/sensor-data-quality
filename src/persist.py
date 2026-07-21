@@ -31,12 +31,23 @@ HISTORY_PATH = DATA_DIR / "history.json"
 
 HISTORY_RETENTION_DAYS = 90
 
+# Scary-wrong guard (A1 F4). is_valid_derived only proves a run is STRUCTURALLY sound —
+# an all-dead upstream (empty-but-200 for every Sensor) scores ~100% failed, is
+# structurally valid, and would overwrite last-good with a maximally-alarming headline.
+# So publishing also requires the headline be plausible: under an absolute ceiling, and —
+# when comparing the SAME panel — not swinging implausibly far from last-good. A panel
+# change (e.g. sample -> full at A6) is not a comparable swing, so only the ceiling
+# applies there. A held run retains last-good pending manual confirmation.
+FAILURE_RATE_CEILING_PCT = 90.0
+FAILURE_RATE_JUMP_PP = 30.0
+
 
 def is_valid_derived(derived: Any) -> bool:
-    """True if `derived` is a well-formed, non-empty scoring safe to publish.
+    """True if `derived` is a well-formed, non-empty scoring (structurally sound).
 
-    Guards the last-good JSON: an empty result (zero Sensors scored) or a malformed
-    dict (a partial write, a failure that produced junk) must NOT overwrite it.
+    Guards the last-good JSON against an empty result (zero Sensors scored) or a
+    malformed dict (a partial write, a failure that produced junk). Structural only —
+    the scary-wrong headline guard is `is_publishable`.
     """
     if not isinstance(derived, dict):
         return False
@@ -46,6 +57,35 @@ def is_valid_derived(derived: Any) -> bool:
         return False
     scored = national.get("sensors_scored")
     return isinstance(scored, int) and scored > 0
+
+
+def _failure_rate(derived: Any) -> Optional[float]:
+    """The national failure-rate of a derived dict, or None if absent/malformed."""
+    national = derived.get("national") if isinstance(derived, dict) else None
+    rate = national.get("failure_rate_pct") if isinstance(national, dict) else None
+    return rate if isinstance(rate, (int, float)) else None
+
+
+def is_publishable(derived: Any, last_good: Optional[dict[str, Any]]) -> bool:
+    """True if `derived` is safe to publish: structurally sound AND not scary-wrong.
+
+    Beyond is_valid_derived, holds a run whose headline is implausible — above the
+    absolute ceiling, or (same panel only) swinging more than `FAILURE_RATE_JUMP_PP`
+    from `last_good`. `last_good` is the currently-committed derived dict, or None on a
+    first run. Holding means "retain last-good pending manual confirm", not "discard".
+    """
+    if not is_valid_derived(derived):
+        return False
+    rate = _failure_rate(derived)
+    if rate is None:
+        return False
+    if rate > FAILURE_RATE_CEILING_PCT:
+        return False
+    last_rate = _failure_rate(last_good) if last_good is not None else None
+    same_panel = last_good is not None and last_good.get("panel") == derived.get("panel")
+    if same_panel and last_rate is not None and abs(rate - last_rate) > FAILURE_RATE_JUMP_PP:
+        return False
+    return True
 
 
 def build_history_entry(derived: dict[str, Any], now: datetime) -> dict[str, Any]:
@@ -118,6 +158,18 @@ def _read_history(path: Path) -> list[dict[str, Any]]:
     return rows if isinstance(rows, list) else []
 
 
+def _read_last_good(path: Path) -> Optional[dict[str, Any]]:
+    """The currently-committed derived JSON, or None if absent/corrupt. Used to compare
+    a fresh run against last-good for the scary-wrong guard (never aborts a good run)."""
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    return data if isinstance(data, dict) else None
+
+
 def _atomic_write_json(path: Path, data: Any) -> None:
     """Write JSON via a temp file + os.replace so last-good is never half-written."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -133,10 +185,11 @@ def persist_run(derived: Any, now: datetime,
     """Publish `derived` + append history, but only if it passes the validity gate.
 
     Returns True when the files were written, False when the run was retained (the
-    last-good JSON left untouched). This is the T5 fallback: a failed/empty run does
-    not overwrite good data.
+    last-good JSON left untouched). This is the T5 fallback: a failed/empty run does not
+    overwrite good data — extended by the F4 scary-wrong guard, which also holds a
+    structurally-valid run whose headline is implausible (vs last-good).
     """
-    if not is_valid_derived(derived):
+    if not is_publishable(derived, _read_last_good(derived_path)):
         return False
 
     _atomic_write_json(derived_path, derived)
