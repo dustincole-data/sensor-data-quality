@@ -14,7 +14,7 @@ That guardrail is load-bearing. Everything in this report stays on the data-heal
 
 ## Why I built it
 
-I wanted a public, end-to-end artifact that proves one competency cleanly: deterministic data-quality scoring and observability engineering at fleet scale, shipped and kept running, on real data with receipts anyone can check.
+I wanted a public, end-to-end artifact that proves one competency cleanly: deterministic data-quality scoring and observability engineering at fleet scale, shipped and kept running, on real data anyone can check.
 
 The public air-sensor network is a good proving ground because it is exactly the shape of problem that competency exists for: a real, messy fleet of thousands of independent endpoints, all reporting into one open API, all free to pull. The domain is incidental. The method is the point, and it is the same method a utility runs against smart-meter telemetry or a platform runs against any IoT fleet.
 
@@ -70,7 +70,7 @@ What it means, plainly: on any given day a large share of the public air-sensor 
 
 ## Honest limits
 
-Named plainly, because a report that survives scrutiny names its own gaps:
+Named plainly, because the gaps matter as much as the wins:
 
 - **Scope is narrow by design.** v1 is US PM2.5 only. Global coverage and other pollutants (ozone, NO2) are a planned widening, not something already shipped.
 - **Two of the four checks overlap.** Completeness and staleness are two views of the same dropout signal (staleness rarely fires on its own), so the score effectively rests on roughly three independent axes: dropout, drift, and plausibility. The equal 0.25 weights reflect that honestly and are marked provisional rather than presented as tuned.

@@ -20,6 +20,9 @@ venv/
 # node (if the page tooling lands here)
 node_modules/
 
+# agent scratch — plans, findings, drafts; working artifacts, never the repo
+.scratch/
+
 # os / editor
 .DS_Store
 Thumbs.db
