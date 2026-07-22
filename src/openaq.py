@@ -35,6 +35,22 @@ def should_exclude_location(location: dict[str, Any]) -> bool:
     return False
 
 
+def _resolve_provider(location: dict[str, Any]) -> Optional[str]:
+    """The Location's provider name, recovering from OpenAQ's own "N/A" sentinel.
+
+    OpenAQ registers a literal placeholder provider (`id=1, name="N/A"`) for
+    Locations it has never attributed to a real network — passing that string
+    through would read as a genuine provider name (A8). Fall back to the
+    Location's `owner.name`, which OpenAQ still populates even when `provider`
+    is the placeholder; if that's absent too, return None (never the sentinel
+    string) so the site's `provider || "Unknown"` handles it without a special case.
+    """
+    provider_name = (location.get("provider") or {}).get("name")
+    if provider_name == "N/A":
+        return (location.get("owner") or {}).get("name") or None
+    return provider_name
+
+
 def extract_pm25_sensors(locations_page: dict[str, Any]) -> list[dict[str, Any]]:
     """Flatten a `/v3/locations` page into one record per PM2.5 Sensor.
 
@@ -43,7 +59,7 @@ def extract_pm25_sensors(locations_page: dict[str, Any]) -> list[dict[str, Any]]
     """
     records: list[dict[str, Any]] = []
     for location in locations_page.get("results", []):
-        provider = (location.get("provider") or {}).get("name")
+        provider = _resolve_provider(location)
         # The Location's minute-resolution last-seen (this page already carries it — no
         # extra call). Used as the Sensor's freshness signal for the staleness check
         # (A1 F5): far finer than the /days day-resolution coverage end, so a normally-

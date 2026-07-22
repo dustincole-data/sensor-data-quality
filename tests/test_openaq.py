@@ -50,6 +50,35 @@ def test_extract_pm25_sensors_empty_page_yields_nothing():
     assert extract_pm25_sensors({"results": []}) == []
 
 
+# --- A8: OpenAQ's own "N/A" placeholder provider must not leak through verbatim --
+
+def test_extract_pm25_sensors_recovers_owner_when_provider_is_na_sentinel():
+    # OpenAQ registers a literal placeholder provider (id=1, name="N/A") for
+    # Locations it has never attributed to a real network (confirmed live for
+    # Penn's Hill / Asheville NC). Recover the owner name instead of passing
+    # the sentinel through as if it were a real provider.
+    location = {
+        "name": "Penn's Hill",
+        "owner": {"name": "Unknown Governmental Organization"},
+        "provider": {"id": 1, "name": "N/A"},
+        "sensors": [{"id": 6655237, "parameter": {"id": 2}}],
+    }
+    sensors = extract_pm25_sensors({"results": [location]})
+    assert sensors[0]["provider"] == "Unknown Governmental Organization"
+
+
+def test_extract_pm25_sensors_na_sentinel_without_owner_is_none():
+    # No owner to fall back to either -> emit null, never the literal "N/A"
+    # string, so the display layer's `provider || "Unknown"` applies cleanly.
+    location = {
+        "name": "No Attribution Site",
+        "provider": {"id": 1, "name": "N/A"},
+        "sensors": [{"id": 42, "parameter": {"id": 2}}],
+    }
+    sensors = extract_pm25_sensors({"results": [location]})
+    assert sensors[0]["provider"] is None
+
+
 def test_parse_datetime_last_reads_utc_as_aware_datetime():
     detail = _load("sensor_detail.sample.json")
     assert parse_datetime_last(detail) == datetime(2026, 7, 18, 11, 0, 0, tzinfo=timezone.utc)
