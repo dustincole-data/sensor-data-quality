@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-21T14:38:18.094720+00:00",
+  "generated_at": "2026-07-22T08:43:54.055165+00:00",
   "retention_days": 90,
   "history": [
     {
@@ -41,6 +41,23 @@
         "HabitatMap": 50.0,
         "Love My Air Denver": 77.2,
         "N/A": 75.0,
+        "Spartan": 50.0,
+        "richmond beaco2n": 50.0
+      }
+    },
+    {
+      "date": "2026-07-22",
+      "failure_rate_pct": 73.5,
+      "sensors_scored": 5551,
+      "panel": "US PM2.5 (live full panel)",
+      "provider_medians": {
+        "AirGradient": 86.2,
+        "AirNow": 72.7,
+        "CMU": 50.0,
+        "Clarity": 67.2,
+        "HabitatMap": 50.0,
+        "Love My Air Denver": 79.2,
+        "N/A": 73.2,
         "Spartan": 50.0,
         "richmond beaco2n": 50.0
       }
