@@ -175,6 +175,18 @@ def test_history_entry_provider_medians_are_median_trust_score_per_provider():
     assert entry["provider_medians"] == {"AirNow": 80.0, "PurpleAir": 40.0, "Unknown": 55.0}
 
 
+def test_history_provider_medians_exclude_dark_sensors():
+    # Dark Sensors are counted, not scored (ADR-0007): a graveyard of dead hardware must
+    # not drag a live provider's median down. Only the live rows set the median.
+    sensors = [
+        {"sensor_id": 1, "provider": "AirNow", "trust_score": 90.0, "dark": False},
+        {"sensor_id": 2, "provider": "AirNow", "trust_score": 70.0, "dark": False},
+        {"sensor_id": 3, "provider": "AirNow", "trust_score": 50.0, "dark": True},  # excluded
+    ]
+    entry = build_history_entry(_derived(sensors=sensors), NOW)
+    assert entry["provider_medians"] == {"AirNow": 80.0}  # median of 90 & 70, dark ignored
+
+
 # --- append_history: idempotent per day + 90-day retention -------------------
 
 def test_append_replaces_same_day_entry_rather_than_duplicating():

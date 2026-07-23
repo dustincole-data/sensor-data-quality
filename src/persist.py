@@ -100,6 +100,10 @@ def build_history_entry(derived: dict[str, Any], now: datetime) -> dict[str, Any
         score = sensor.get("trust_score")
         if score is None:
             continue
+        # Dark Sensors are counted, not scored (ADR-0007) — exclude them from the provider
+        # medians so a graveyard of dead hardware can't drag a live provider's median down.
+        if sensor.get("dark"):
+            continue
         provider = sensor.get("provider") or "Unknown"
         by_provider.setdefault(provider, []).append(score)
 

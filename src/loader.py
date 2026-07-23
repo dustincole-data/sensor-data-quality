@@ -36,8 +36,20 @@ from src.scoring import (
 )
 
 WINDOW_DAYS = 30
-PANEL_LABEL = "US PM2.5 (live full panel)"
+# Honest scope (ADR-0007): the panel is the set of US PM2.5 feeds OpenAQ redistributes —
+# low-cost/hobbyist-heavy, NOT "the US air-sensor network." The old "(live full panel)"
+# label sat a pulsing live-dot over a graveyard (23% last reported >1yr ago), so it's
+# dropped: liveness is now stated as a count, not asserted by the label.
+PANEL_LABEL = "US PM2.5 sensors redistributed by OpenAQ"
 OPENAQ_ATTRIBUTION = "OpenAQ (CC BY 4.0)"
+
+# A Sensor silent longer than this — or one that never reported — is DARK: pulled OUT of
+# the *scored* population and counted, not scored (ADR-0007). 7 days is a weekly-heartbeat
+# bar, far more conservative than the 24h Staleness check, so a merely-stale-but-alive
+# Sensor still scores (as flawed, on Staleness). The split is deliberately robust to the
+# exact window: the panel is bimodal (most Sensors report within a day, then a long tail of
+# multi-year-dead hardware), so 7d vs 30d moves the dark share only ~1pp.
+DARK_AFTER_HOURS = 168
 
 # Abort-resilience (A1 F3): a single persistently-bad Sensor (non-retryable 4xx, or a 5xx
 # past the client's retries) must never abort a ~3h full-Panel run — it is skipped and
@@ -65,11 +77,98 @@ def _window_bounds(now: datetime, window_days: int = WINDOW_DAYS) -> tuple[str, 
     return date_from.isoformat(), date_to.isoformat()
 
 
+def _age_hours(datetime_last_iso: Optional[str], now: datetime) -> Optional[float]:
+    """Hours since a Sensor's last report, from its published ISO `datetime_last`
+    (None if it never reported)."""
+    if not datetime_last_iso:
+        return None
+    return (now - datetime.fromisoformat(datetime_last_iso)).total_seconds() / 3600.0
+
+
+def _is_dark(row: dict[str, Any], now: datetime, dark_after_hours: float) -> bool:
+    """Dark = never reported, or silent past the dark window (ADR-0007). Dark Sensors are
+    counted, not scored: we have no recent data to judge their reporting health."""
+    age = _age_hours(row.get("datetime_last"), now)
+    return age is None or age > dark_after_hours
+
+
+def _site_key(row: dict[str, Any]) -> tuple[Any, ...]:
+    """The physical-site key for dedup: coordinates rounded to 4dp + provider. A Sensor
+    with no coordinates can't be a coordinate duplicate, so it keys on its own id (kept as
+    its own site)."""
+    c = row.get("coordinates")
+    if not c or c.get("latitude") is None or c.get("longitude") is None:
+        return ("id", row["sensor_id"])
+    return (round(c["latitude"], 4), round(c["longitude"], 4), row.get("provider"))
+
+
+def dedup_to_sites(rows: list[dict[str, Any]], now: datetime) -> list[dict[str, Any]]:
+    """Collapse Sensor rows to physical sites (coord@4dp + provider), keeping the
+    most-recently-reporting row of each (ADR-0007). One site's hardware-swap history
+    (e.g. 'Millvale' x86 rows at one coordinate) is ONE site, not 86 instruments — deduped
+    before any count so a single dead site can't set a rollup or inflate the denominator.
+    Insertion order is preserved (dict grouping) so a deduped panel keeps a stable order."""
+    groups: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+    for row in rows:
+        groups.setdefault(_site_key(row), []).append(row)
+
+    _oldest = datetime.min.replace(tzinfo=timezone.utc)
+
+    def _reported_at(row: dict[str, Any]) -> datetime:
+        dt = row.get("datetime_last")
+        return datetime.fromisoformat(dt) if dt else _oldest
+
+    return [max(group, key=_reported_at) for group in groups.values()]
+
+
+def _finalize_panel(scored: list[dict[str, Any]], now: datetime,
+                    dark_after_hours: float) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Correct the population before any count (ADR-0007): dedup scored Sensor rows to
+    physical sites, tag each dark + status (clean | flawed | dark), and roll up the national
+    decomposition. Only Sensors that actually report are "scored"; the headline splits into
+    clean / reporting-but-flawed / dark instead of one blob. Shared by build_derived (fresh
+    scoring) and the one-time reprocessor (existing JSON) so both emit identical structure."""
+    raw_rows = len(scored)
+    sites = dedup_to_sites(scored, now)
+    for s in sites:
+        s["dark"] = _is_dark(s, now, dark_after_hours)
+        s["status"] = "dark" if s["dark"] else ("flawed" if s["failed_any"] else "clean")
+
+    live = [s for s in sites if not s["dark"]]
+    dark_rows = [s for s in sites if s["dark"]]
+    clean = [s for s in live if not s["failed_any"]]
+    flawed = [s for s in live if s["failed_any"]]
+    n_sites, n_live = len(sites), len(live)
+    _pct = lambda part: round(len(part) / n_sites * 100, 1) if n_sites else 0.0
+
+    national = {
+        # "Scored" = Sensors that actually report; dark Sensors are counted separately.
+        "sensors_scored": n_live,
+        "sensors_failed": len(flawed),
+        # The live-only failure rate — the number that survives the "zombie census" attack.
+        "failure_rate_pct": round(len(flawed) / n_live * 100, 1) if n_live else 0.0,
+        # The three honest buckets (share of all physical sites) + the counts they read.
+        "sites_total": n_sites,
+        "live": n_live,
+        "dark": len(dark_rows),
+        "clean": len(clean),
+        "flawed": len(flawed),
+        "clean_pct": _pct(clean),
+        "flawed_pct": _pct(flawed),
+        "dark_pct": _pct(dark_rows),
+        # Pre-dedup Sensor rows, disclosed so the dedup is auditable.
+        "raw_rows": raw_rows,
+        "dark_after_hours": dark_after_hours,
+    }
+    return sites, national
+
+
 def build_derived(records: list[dict[str, Any]], now: datetime,
                   weights: dict[str, float] = TRUST_WEIGHTS,
                   excluded_by_redistribution: int = 0,
                   panel_label: str = PANEL_LABEL,
-                  skipped: int = 0) -> dict[str, Any]:
+                  skipped: int = 0,
+                  dark_after_hours: float = DARK_AFTER_HOURS) -> dict[str, Any]:
     """Score each record's Trust Score and roll up the national failure-rate.
 
     A record is `{sensor_id, location, provider, datetime_last, percent_complete,
@@ -110,9 +209,7 @@ def build_derived(records: list[dict[str, Any]], now: datetime,
             }
         )
 
-    scored = len(sensors)
-    failed = sum(1 for s in sensors if s["failed_any"])
-    failure_rate = round(failed / scored * 100, 1) if scored else 0.0
+    sites, national = _finalize_panel(sensors, now, dark_after_hours)
 
     result = {
         "generated_at": now.isoformat(),
@@ -132,15 +229,12 @@ def build_derived(records: list[dict[str, Any]], now: datetime,
         "exclusions": {
             "by_redistribution_policy": excluded_by_redistribution,
         },
-        "national": {
-            "sensors_scored": scored,
-            "sensors_failed": failed,
-            "failure_rate_pct": failure_rate,
-        },
+        "national": national,
         # Sensors dropped this run after a per-Sensor fetch failure (A1 F3). Surfaced so a
         # partial run is visible/auditable rather than silently thinning the Panel.
         "skipped": skipped,
-        "sensors": sensors,
+        # Deduped to physical sites, each tagged status = clean | flawed | dark.
+        "sensors": sites,
         "attribution": OPENAQ_ATTRIBUTION,
     }
     return result
@@ -285,6 +379,9 @@ if __name__ == "__main__":
     else:
         print(f"RETAINED last-good {DERIVED_PATH} — empty/invalid or implausible result, "
               f"not overwritten (F4 guard)")
-    print(f"  Scored: {n['sensors_failed']}/{n['sensors_scored']} failed >=1 SLA ({n['failure_rate_pct']}%)")
+    print(f"  Sites: {n['sites_total']} physical ({n['raw_rows']} raw rows deduped)")
+    print(f"  Live {n['live']}: clean {n['clean']} ({n['clean_pct']}%) / "
+          f"flawed {n['flawed']} ({n['flawed_pct']}%)  |  dark {n['dark']} ({n['dark_pct']}%)")
+    print(f"  Live failure rate: {n['sensors_failed']}/{n['sensors_scored']} = {n['failure_rate_pct']}%")
     print(f"  Excluded: {e.get('by_redistribution_policy', 0)} by policy")
     print(f"  {result.get('http_calls', '?')} HTTP calls in {d}s")

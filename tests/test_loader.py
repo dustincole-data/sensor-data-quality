@@ -129,13 +129,97 @@ def test_derived_carries_drift_thresholds_and_a_provisional_weights_note():
 
 def test_empty_panel_reports_zero_rate_not_a_crash():
     derived = build_derived([], NOW)
-    assert derived["national"] == {"sensors_scored": 0, "sensors_failed": 0, "failure_rate_pct": 0.0}
+    assert derived["national"] == {
+        "sensors_scored": 0, "sensors_failed": 0, "failure_rate_pct": 0.0,
+        "sites_total": 0, "live": 0, "dark": 0, "clean": 0, "flawed": 0,
+        "clean_pct": 0.0, "flawed_pct": 0.0, "dark_pct": 0.0,
+        "raw_rows": 0, "dark_after_hours": 168,
+    }
 
 
 def test_failure_rate_rounds_to_one_decimal():
     # 1 of 3 fail -> 33.333... -> 33.3
     derived = build_derived([_rec(1), _rec(2), _rec(3, percent_complete=10.0)], NOW)
     assert derived["national"]["failure_rate_pct"] == 33.3
+
+
+# --- ADR-0007: dedup to physical sites + dark-split + national decomposition ---
+
+_SAME = {"latitude": 40.4783, "longitude": -79.9704}
+
+
+def test_dedup_collapses_same_coord_and_provider_keeping_most_recent():
+    # Two rows at one coordinate + provider = one physical site (a hardware-swap history,
+    # not two instruments). The most-recently-reporting row survives.
+    old = _rec(2, hours_ago=500, coordinates=_SAME)
+    recent = _rec(1, hours_ago=2, coordinates=_SAME)
+    derived = build_derived([old, recent], NOW)
+    assert [s["sensor_id"] for s in derived["sensors"]] == [1]  # kept the recent row
+    assert derived["national"]["sites_total"] == 1
+    assert derived["national"]["raw_rows"] == 2
+
+
+def test_dedup_keeps_distinct_providers_at_the_same_coordinate():
+    derived = build_derived(
+        [_rec(1, coordinates=_SAME, provider="AirNow"),
+         _rec(2, coordinates=_SAME, provider="CMU")], NOW)
+    assert derived["national"]["sites_total"] == 2
+
+
+def test_sensors_without_coordinates_are_never_deduped_together():
+    # No coordinates -> can't be a coordinate duplicate; each keys on its own id and is kept.
+    derived = build_derived([_rec(1), _rec(2)], NOW)  # _rec attaches no coordinates
+    assert derived["national"]["sites_total"] == 2
+
+
+def test_dark_sensors_are_counted_not_scored():
+    # A never-reported and a >7d-silent Sensor are dark: pulled out of the scored
+    # population and counted separately; only the two live Sensors are "scored".
+    rows = [
+        _rec(1, hours_ago=2),                         # live, clean
+        _rec(2, hours_ago=2, percent_complete=50.0),  # live, flawed (completeness)
+        _rec(3, hours_ago=None, percent_complete=0.0, window_min=None, window_max=None),  # dark
+        _rec(4, hours_ago=24 * 10),                   # dark (silent 10 days)
+    ]
+    n = build_derived(rows, NOW)["national"]
+    assert n["sites_total"] == 4 and n["live"] == 2 and n["dark"] == 2
+    assert n["sensors_scored"] == 2                   # dark excluded from the scored count
+    assert n["clean"] == 1 and n["flawed"] == 1
+    assert n["sensors_failed"] == 1
+    assert n["failure_rate_pct"] == 50.0              # 1 flawed of 2 LIVE, not over all 4
+
+
+def test_row_status_labels_clean_flawed_dark():
+    rows = [_rec(1, hours_ago=2), _rec(2, hours_ago=2, percent_complete=50.0),
+            _rec(3, hours_ago=24 * 10)]
+    by_id = {s["sensor_id"]: s for s in build_derived(rows, NOW)["sensors"]}
+    assert by_id[1]["status"] == "clean" and by_id[1]["dark"] is False
+    assert by_id[2]["status"] == "flawed" and by_id[2]["dark"] is False
+    assert by_id[3]["status"] == "dark" and by_id[3]["dark"] is True
+
+
+def test_national_buckets_sum_to_sites_and_percentages_are_shares():
+    rows = [_rec(1, hours_ago=2), _rec(2, hours_ago=2, percent_complete=50.0),
+            _rec(3, hours_ago=24 * 10),
+            _rec(4, hours_ago=None, percent_complete=0.0, window_min=None, window_max=None)]
+    n = build_derived(rows, NOW)["national"]
+    assert n["clean"] + n["flawed"] + n["dark"] == n["sites_total"]
+    assert n["live"] == n["clean"] + n["flawed"]
+    assert n["dark_pct"] == 50.0                      # 2 dark of 4 sites
+
+
+def test_dark_window_is_configurable_and_the_split_is_robust():
+    # A Sensor silent 5 days is live-but-flawed under the 7d default, dark under 24h — the
+    # knob exists, but the panel is bimodal so the default window isn't doing the work.
+    rows = [_rec(1, hours_ago=24 * 5)]
+    assert build_derived(rows, NOW)["national"]["dark"] == 0
+    assert build_derived(rows, NOW, dark_after_hours=24)["national"]["dark"] == 1
+
+
+def test_default_panel_label_states_openaq_scope_not_live_full_panel():
+    derived = build_derived([_rec(1)], NOW)
+    assert "OpenAQ" in derived["panel"]
+    assert "live full panel" not in derived["panel"].lower()
 
 
 # --- collect_and_build: offline end-to-end via fake clients ------------------
@@ -195,11 +279,13 @@ class PagedClient:
             (FIXTURES / "sensor_days_window.sample.json").read_text(encoding="utf-8"))
 
     def iter_location_pages(self):
+        # Distinct coordinates so the two Sensors are two physical sites (the dedup keys on
+        # coord@4dp + provider; same-coord rows would correctly collapse to one).
         yield {"results": [{"name": "L1", "provider": {"name": "P"}, "licenses": [],
                             "coordinates": {"latitude": 29.76, "longitude": -95.37},
                             "sensors": [{"id": 11, "parameter": {"id": 2}}]}]}
         yield {"results": [{"name": "L2", "provider": {"name": "P"}, "licenses": [],
-                            "coordinates": {"latitude": 29.76, "longitude": -95.37},
+                            "coordinates": {"latitude": 30.10, "longitude": -95.37},
                             "sensors": [{"id": 22, "parameter": {"id": 2}}]}]}
         yield {"results": []}  # exhausted
 
@@ -274,9 +360,10 @@ def test_sensor_carries_provider_attribution():
 # --- A5b F3: abort-resilience (one bad Sensor must not nuke a multi-hour run) ---
 
 def _bare_loc(sensor_id):
-    """A minimal single-PM2.5-Sensor Location page result (no datetimeLast)."""
+    """A minimal single-PM2.5-Sensor Location page result (no datetimeLast). Coordinates
+    vary by id so each is its own physical site (the dedup keys on coord@4dp + provider)."""
     return {"name": f"L{sensor_id}", "provider": {"name": "P"}, "licenses": [],
-            "coordinates": {"latitude": 29.76, "longitude": -95.37},
+            "coordinates": {"latitude": round(29.76 + sensor_id * 0.01, 4), "longitude": -95.37},
             "sensors": [{"id": sensor_id, "parameter": {"id": 2}}]}
 
 
