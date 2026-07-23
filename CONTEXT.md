@@ -13,7 +13,7 @@ One measuring element at a Location reporting a single parameter (e.g. PM2.5) to
 _Avoid_: monitor, device
 
 **Panel**:
-The set of Sensors currently in scope for scoring. v1 = United States **PM2.5** Sensors. (Other pollutants + global are v2 widens.)
+The set of Sensors currently in scope for scoring. v1 = United States **PM2.5** Sensors, the natural v1 scope: the health-headline pollutant, the one behind most AQI readings, and the most widely reported parameter. (Other pollutants + global are v2 widens.)
 _Avoid_: fleet (evocative in prose, but "Panel" is the precise scored set), cohort
 
 **Reference-grade sensor**:

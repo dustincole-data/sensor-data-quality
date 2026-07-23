@@ -20,7 +20,7 @@ The public air-sensor network is a good proving ground because it is exactly the
 
 ## How it works
 
-**The scored unit.** Each US PM2.5 sensor OpenAQ exposes. The v1 scored set (the "Panel") is US PM2.5 only; other pollutants and global coverage are planned, not built. As of the run that locked the numbers below, the Panel was **5,546 sensors across 9 providers**, spanning regulatory networks (AirNow) and low-cost community sensors (Clarity, AirGradient).
+**The scored unit.** Each US PM2.5 sensor OpenAQ exposes. The v1 scored set (the "Panel") is US PM2.5 only; other pollutants and global coverage are planned, not built. PM2.5 is the natural first pollutant on two counts: it is the fine-particle pollution most tied to health and the one that sets the AQI on most unhealthy-air days, and it is by far the most widely reported parameter in the network, so it is the only pollutant with the coverage to score a whole fleet today. As of the run that locked the numbers below, the Panel was **5,546 sensors across 9 providers**, spanning regulatory networks (AirNow) and low-cost community sensors (Clarity, AirGradient).
 
 **The four checks.** Each sensor is graded on four pure pass/fail checks. Every one is a data-reporting test; none is an air-quality claim.
 
