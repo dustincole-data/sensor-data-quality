@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-23T08:44:23.754941+00:00",
+  "generated_at": "2026-07-24T08:42:12.098248+00:00",
   "retention_days": 90,
   "history": [
     {
@@ -78,6 +78,19 @@
         "Spartan": 50.0,
         "Unknown Governmental Organization": 50.0,
         "richmond beaco2n": 50.0
+      }
+    },
+    {
+      "date": "2026-07-24",
+      "failure_rate_pct": 47.9,
+      "sensors_scored": 3555,
+      "panel": "US PM2.5 sensors redistributed by OpenAQ",
+      "provider_medians": {
+        "AirGradient": 95.3,
+        "AirNow": 91.1,
+        "Clarity": 86.9,
+        "Love My Air Denver": 82.5,
+        "Nexus-weather": 94.9
       }
     }
   ]
