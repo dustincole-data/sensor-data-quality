@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-25T11:49:55.751696+00:00",
+  "generated_at": "2026-09-26T11:23:54.664097+00:00",
   "retention_days": 90,
   "history": [
     {
@@ -909,6 +909,19 @@
         "AirNow": 92.0,
         "Clarity": 87.8,
         "Love My Air Denver": 86.3,
+        "Nexus-weather": 75.0
+      }
+    },
+    {
+      "date": "2026-09-26",
+      "failure_rate_pct": 37.1,
+      "sensors_scored": 3729,
+      "panel": "US PM2.5 sensors redistributed by OpenAQ",
+      "provider_medians": {
+        "AirGradient": 93.0,
+        "AirNow": 91.6,
+        "Clarity": 89.1,
+        "Love My Air Denver": 84.7,
         "Nexus-weather": 75.0
       }
     }
