@@ -1,20 +1,7 @@
 {
-  "generated_at": "2026-11-02T15:49:16.298888+00:00",
+  "generated_at": "2026-11-03T14:12:01.206413+00:00",
   "retention_days": 90,
   "history": [
-    {
-      "date": "2026-08-04",
-      "failure_rate_pct": 39.5,
-      "sensors_scored": 3457,
-      "panel": "US PM2.5 sensors redistributed by OpenAQ",
-      "provider_medians": {
-        "AirGradient": 95.9,
-        "AirNow": 94.4,
-        "Clarity": 84.2,
-        "Love My Air Denver": 78.9,
-        "Nexus-weather": 82.0
-      }
-    },
     {
       "date": "2026-08-05",
       "failure_rate_pct": 41.0,
@@ -1183,6 +1170,19 @@
         "Clarity": 90.1,
         "Love My Air Denver": 64.8,
         "Nexus-weather": 97.5
+      }
+    },
+    {
+      "date": "2026-11-03",
+      "failure_rate_pct": 38.5,
+      "sensors_scored": 3717,
+      "panel": "US PM2.5 sensors redistributed by OpenAQ",
+      "provider_medians": {
+        "AirGradient": 94.6,
+        "AirNow": 93.5,
+        "Clarity": 89.4,
+        "Love My Air Denver": 58.3,
+        "Nexus-weather": 96.7
       }
     }
   ]
